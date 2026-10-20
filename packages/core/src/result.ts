@@ -16,6 +16,7 @@ export const ERROR_CODES = [
   "provider_rate_limited",
   "not_found",
   "invalid_model_output",
+  "invalid_provider_data",
   "store_failure",
   "config_invalid",
   "unsupported_operation",
