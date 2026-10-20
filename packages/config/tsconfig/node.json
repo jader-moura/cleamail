@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "cleamail node (typecheck and lint)",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true
+  }
+}

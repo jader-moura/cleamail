@@ -1,0 +1,30 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.vite/
+*.tsbuildinfo
+
+# Local state: never commit real mail data, databases or credentials
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.db
+.cleamail/
+credentials.json
+token.json
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test output
+playwright-report/
+test-results/

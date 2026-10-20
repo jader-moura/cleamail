@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# esbuild (via vitest) needs its install script to place the platform binary.
+onlyBuiltDependencies:
+  - esbuild

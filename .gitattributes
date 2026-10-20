@@ -1,0 +1,5 @@
+# Keep LF in the working copy on every platform: Prettier enforces LF, so a CRLF checkout on
+# Windows would otherwise fail `pnpm format:check`.
+* text=auto eol=lf
+
+pnpm-lock.yaml linguist-generated=true

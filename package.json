@@ -1,0 +1,31 @@
+{
+  "name": "cleamail",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local-first email agent: classifies your inbox with a local LLM, clears the noise, surfaces what matters.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.26.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@cleamail/server --filter=@cleamail/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "eval": "turbo run eval --filter=@cleamail/evals",
+    "eval:smoke": "turbo run eval:smoke --filter=@cleamail/evals"
+  },
+  "devDependencies": {
+    "@cleamail/config": "workspace:*",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.3"
+  }
+}

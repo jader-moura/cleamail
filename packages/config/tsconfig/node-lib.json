@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "cleamail node library (emits)",
+  "extends": "./node.json",
+  "compilerOptions": {
+    "noEmit": false
+  }
+}
