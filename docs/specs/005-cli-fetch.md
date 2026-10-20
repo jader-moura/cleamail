@@ -10,7 +10,8 @@ mail into SQLite. This is the Foundations gate.
 
 ## Scope
 
-- The command surface with help text: `init`, `run`, `start`, `eval`, `undo`, `status`. Only the
+- The command surface with help text: `init`, `run`, `start`, `eval`, `undo`, `status`, `logout`
+  (`logout` deletes the stored credential, which `docs/gmail-setup.md` points users to). Only the
   parts Foundations needs do real work; the rest exit with a clear "not in this phase yet" message.
 - `cleamail init`: checks that Ollama is reachable, connects the mail account, writes settings.
 - `cleamail run --dry-run --since 7d`: fetches and stores, prints counts only, no classification.

@@ -21,7 +21,13 @@ specs in [docs/specs](docs/specs/README.md).
 | 001  | Monorepo and tooling baseline | done   |
 | 002  | Core domain model and ports   | done   |
 | 003  | SQLite store                  | done   |
-| 004  | Gmail provider and OAuth      | next   |
+| 004  | Gmail provider and OAuth      | done   |
+| 005  | CLI fetch into SQLite         | next   |
+
+## Connecting a mailbox
+
+Gmail needs your own Google OAuth client, which takes about three minutes to create and keeps every
+request between your browser and Google. See [docs/gmail-setup.md](docs/gmail-setup.md).
 
 ## Requirements
 
