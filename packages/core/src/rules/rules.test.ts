@@ -45,6 +45,14 @@ describe("matchesListEntry", () => {
   it("matches nothing for an empty entry", () => {
     expect(matchesListEntry({ address: "a@bank.example" }, "  ")).toBe(false);
   });
+
+  it("matches nothing for an empty sender address", () => {
+    expect(matchesListEntry({ address: "   " }, "bank.example")).toBe(false);
+  });
+
+  it("matches nothing when the sender has no domain at all", () => {
+    expect(matchesListEntry({ address: "postmaster" }, "bank.example")).toBe(false);
+  });
 });
 
 describe("suspicious rules", () => {
@@ -94,6 +102,25 @@ describe("suspicious rules", () => {
   it("accepts a display name that repeats the real address", () => {
     const outcome = evaluateRules(
       input({ from: { address: "a@bank.example", name: "a@bank.example" } }),
+      context,
+    );
+
+    expect(outcome.match).toBeUndefined();
+  });
+
+  it("says nothing when the display name has no complete address in it", () => {
+    const outcome = evaluateRules(
+      input({ from: { address: "real@shop.example", name: "contact@" } }),
+      context,
+    );
+
+    expect(outcome.match).toBeUndefined();
+  });
+
+  it("says nothing when the sender address itself has no domain to compare", () => {
+    // Malformed senders are kept rather than dropped, so the rule has to cope with one.
+    const outcome = evaluateRules(
+      input({ from: { address: "postmaster", name: "support@bank.example" } }),
       context,
     );
 
