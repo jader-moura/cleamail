@@ -51,7 +51,7 @@ apps/
   desktop/    # v0.2: Tauri or Electron shell around server + web (not in v0.1)
 packages/
   core/       # Domain: Email, Classification, Decision, Action, Policy. No I/O.
-  providers/  # Mail adapters: gmail (googleapis), imap (imapflow)
+  providers/  # Mail adapters: gmail (thin Zod-validated REST client), imap (imapflow)
   llm/        # Ollama adapter only. Prompts + Zod schemas.
   store/      # SQLite + Drizzle: emails, decisions, actions, audit log, corrections, embeddings, settings
   evals/      # Dataset loader, metrics, benchmark runner
