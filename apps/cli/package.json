@@ -1,0 +1,34 @@
+{
+  "name": "@cleamail/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The cleamail command: init, run, start, status, undo, eval.",
+  "type": "module",
+  "bin": {
+    "cleamail": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsc -p tsconfig.build.json && node dist/main.js"
+  },
+  "dependencies": {
+    "@cleamail/core": "workspace:*",
+    "@cleamail/providers": "workspace:*",
+    "@cleamail/store": "workspace:*",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@cleamail/config": "workspace:*",
+    "@types/node": "^22.19.1",
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
