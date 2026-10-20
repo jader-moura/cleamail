@@ -35,9 +35,10 @@ async function mapWithConcurrency<T, U>(
   items: readonly T[],
   limit: number,
   fn: (item: T) => Promise<U>,
-): Promise<U[]> {
-  const results: U[] = [];
-  results.length = items.length;
+): Promise<(U | undefined)[]> {
+  // Positions stay aligned with `items`, and a position the workers never filled stays undefined
+  // rather than silently shifting the results.
+  const results = new Array<U | undefined>(items.length).fill(undefined);
   let next = 0;
 
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
@@ -70,7 +71,7 @@ export class GmailProvider implements MailProvider {
   private readonly logger: Logger;
   private labelsByName: Map<string, string> | undefined;
   private labelsById = new Map<string, string>();
-  private account_: MailAccount | undefined;
+  private cachedAccount: MailAccount | undefined;
 
   constructor(
     private readonly api: GmailApi,
@@ -80,19 +81,19 @@ export class GmailProvider implements MailProvider {
   }
 
   async account(): Promise<Result<MailAccount>> {
-    if (this.account_ !== undefined) return ok(this.account_);
+    if (this.cachedAccount !== undefined) return ok(this.cachedAccount);
 
     try {
       const profile = await this.api.getProfile();
 
       // The address is the account id: stable, readable in the audit log, and unique per mailbox.
-      this.account_ = {
+      this.cachedAccount = {
         id: toAccountId(profile.emailAddress),
         kind: "gmail",
         address: profile.emailAddress,
       };
 
-      return ok(this.account_);
+      return ok(this.cachedAccount);
     } catch (cause) {
       return err(toDomainError(cause, "Could not read the Gmail profile."));
     }

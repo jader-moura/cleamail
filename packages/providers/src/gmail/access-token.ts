@@ -4,6 +4,7 @@ import {
   systemClock,
   type AccountId,
   type Clock,
+  type OAuthToken,
   type Result,
   type TokenStore,
 } from "@cleamail/core";
@@ -32,31 +33,63 @@ export type RefreshingTokenOptions = {
 export class RefreshingAccessTokenProvider implements AccessTokenProvider {
   private readonly clock: Clock;
 
+  /** Last token seen, so a batch of requests does not read the keychain once per message. */
+  private cached: OAuthToken | undefined;
+
+  /** In-flight refresh, so concurrent requests trigger one refresh instead of one each. */
+  private refreshing: Promise<Result<OAuthToken>> | undefined;
+
   constructor(private readonly options: RefreshingTokenOptions) {
     this.clock = options.clock ?? systemClock;
   }
 
   async token(): Promise<Result<string>> {
-    const stored = await this.options.tokens.get(this.options.accountId);
-    if (!stored.ok) return stored;
+    const current = await this.current();
+    if (!current.ok) return current;
 
-    const token = stored.value;
-    if (token === undefined) {
-      return failure("provider_auth", "No account is connected yet. Run `cleamail init`.");
-    }
+    if (!isExpired(current.value, this.clock.now())) return ok(current.value.accessToken);
 
-    if (!isExpired(token, this.clock.now())) return ok(token.accessToken);
-
-    if (token.refreshToken === undefined) {
+    const refreshToken = current.value.refreshToken;
+    if (refreshToken === undefined) {
       return failure(
         "provider_auth",
         "The authorization expired. Run `cleamail init` to reconnect.",
       );
     }
 
+    const refreshed = await this.refresh(refreshToken);
+    if (!refreshed.ok) return refreshed;
+
+    return ok(refreshed.value.accessToken);
+  }
+
+  private async current(): Promise<Result<OAuthToken>> {
+    if (this.cached !== undefined) return ok(this.cached);
+
+    const stored = await this.options.tokens.get(this.options.accountId);
+    if (!stored.ok) return stored;
+
+    if (stored.value === undefined) {
+      return failure("provider_auth", "No account is connected yet. Run `cleamail init`.");
+    }
+
+    this.cached = stored.value;
+
+    return ok(stored.value);
+  }
+
+  private refresh(refreshToken: string): Promise<Result<OAuthToken>> {
+    this.refreshing ??= this.performRefresh(refreshToken).finally(() => {
+      this.refreshing = undefined;
+    });
+
+    return this.refreshing;
+  }
+
+  private async performRefresh(refreshToken: string): Promise<Result<OAuthToken>> {
     const refreshed = await refreshAccessToken({
       ...this.options.credentials,
-      refreshToken: token.refreshToken,
+      refreshToken,
       ...(this.options.fetchImpl === undefined ? {} : { fetchImpl: this.options.fetchImpl }),
       now: this.clock.now(),
     });
@@ -65,7 +98,9 @@ export class RefreshingAccessTokenProvider implements AccessTokenProvider {
     const saved = await this.options.tokens.set(this.options.accountId, refreshed.value);
     if (!saved.ok) return saved;
 
-    return ok(refreshed.value.accessToken);
+    this.cached = refreshed.value;
+
+    return refreshed;
   }
 }
 
