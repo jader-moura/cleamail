@@ -23,8 +23,8 @@ which needs a Google OAuth client (see [gmail-setup.md](../gmail-setup.md)).
 
 | ID  | Spec                                                         | Status |
 | --- | ------------------------------------------------------------ | ------ |
-| 007 | Rules layer (unsubscribe header, categories, allowlist)      | todo   |
-| 008 | Ollama classifier adapter, versioned prompts, Zod validation | todo   |
+| 007 | [Rules layer](007-rules-layer.md)                            | done   |
+| 008 | Ollama classifier adapter, versioned prompts, Zod validation | next   |
 | 009 | Dry-run report in the CLI                                    | todo   |
 | 010 | Evals package and eval set v1 (300 synthetic emails)         | todo   |
 

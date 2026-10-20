@@ -25,7 +25,8 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 004  | Gmail provider and OAuth      | done   |
 | 005  | CLI: init, run, status        | done   |
 | 006  | Privacy guard                 | done   |
-| 007  | Rules layer                   | next   |
+| 007  | Rules layer                   | done   |
+| 008  | Ollama classifier             | next   |
 
 ## How the privacy promise is enforced
 
