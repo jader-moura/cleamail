@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@cleamail/config": "workspace:*",
+    "@cleamail/privacy": "workspace:*",
     "@types/node": "^22.19.1",
     "eslint": "^9.39.0",
     "typescript": "^5.9.3",
