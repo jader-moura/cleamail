@@ -11,8 +11,8 @@ Status: `todo` | `in progress` | `done`
 | --- | ---------------------------------------------------------------------- | ------ |
 | 001 | [Monorepo and tooling baseline](001-monorepo-tooling.md)               | done   |
 | 002 | [Core domain model and ports](002-core-domain.md)                      | done   |
-| 003 | [Store: SQLite + Drizzle schema](003-store-sqlite.md)                  | todo   |
-| 004 | [Gmail provider and OAuth with keychain tokens](004-gmail-provider.md) | todo   |
+| 003 | [Store: SQLite + Drizzle schema](003-store-sqlite.md)                  | done   |
+| 004 | [Gmail provider and OAuth with keychain tokens](004-gmail-provider.md) | next   |
 | 005 | [CLI skeleton and `fetch` into SQLite](005-cli-fetch.md)               | todo   |
 | 006 | [Privacy guard: outbound host allowlist test](006-privacy-guard.md)    | todo   |
 

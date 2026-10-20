@@ -20,7 +20,8 @@ specs in [docs/specs](docs/specs/README.md).
 | ---- | ----------------------------- | ------ |
 | 001  | Monorepo and tooling baseline | done   |
 | 002  | Core domain model and ports   | done   |
-| 003  | SQLite store                  | next   |
+| 003  | SQLite store                  | done   |
+| 004  | Gmail provider and OAuth      | next   |
 
 ## Requirements
 
