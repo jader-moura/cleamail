@@ -15,3 +15,5 @@ export * from "./ports/email-store.js";
 export * from "./ports/logger.js";
 export * from "./ports/mail-provider.js";
 export * from "./ports/token-store.js";
+
+export * from "./rules/index.js";
