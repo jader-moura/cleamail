@@ -22,7 +22,8 @@ specs in [docs/specs](docs/specs/README.md).
 | 002  | Core domain model and ports   | done   |
 | 003  | SQLite store                  | done   |
 | 004  | Gmail provider and OAuth      | done   |
-| 005  | CLI fetch into SQLite         | next   |
+| 005  | CLI: init, run, status        | done   |
+| 006  | Privacy guard                 | next   |
 
 ## Connecting a mailbox
 
@@ -47,6 +48,17 @@ pnpm build
 ```
 
 Before anything is called done: `pnpm lint && pnpm typecheck && pnpm test`.
+
+The CLI, while it is being built:
+
+```bash
+pnpm --filter @cleamail/cli dev -- init
+pnpm --filter @cleamail/cli dev -- run --dry-run --since 7d
+pnpm --filter @cleamail/cli dev -- status
+```
+
+`CLEAMAIL_DB` points the database somewhere other than the per-user data directory, which is handy
+while developing.
 
 ## Layout
 

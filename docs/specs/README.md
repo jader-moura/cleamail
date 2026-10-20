@@ -13,8 +13,8 @@ Status: `todo` | `in progress` | `done`
 | 002 | [Core domain model and ports](002-core-domain.md)                      | done   |
 | 003 | [Store: SQLite + Drizzle schema](003-store-sqlite.md)                  | done   |
 | 004 | [Gmail provider and OAuth with keychain tokens](004-gmail-provider.md) | done   |
-| 005 | [CLI skeleton and `fetch` into SQLite](005-cli-fetch.md)               | next   |
-| 006 | [Privacy guard: outbound host allowlist test](006-privacy-guard.md)    | todo   |
+| 005 | [CLI skeleton and `fetch` into SQLite](005-cli-fetch.md)               | done   |
+| 006 | [Privacy guard: outbound host allowlist test](006-privacy-guard.md)    | next   |
 
 Gate: reads the inbox reliably.
 

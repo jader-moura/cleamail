@@ -151,9 +151,9 @@ pnpm eval:smoke     # 20-email subset, used in CI
 CLI during development:
 
 ```bash
-pnpm --filter cli dev -- init
-pnpm --filter cli dev -- run --dry-run --since 7d
-pnpm --filter cli dev -- undo --last
+pnpm --filter @cleamail/cli dev -- init
+pnpm --filter @cleamail/cli dev -- run --dry-run --since 7d
+pnpm --filter @cleamail/cli dev -- undo --last
 ```
 
 Local requirements: Node 22+, pnpm, Ollama running on `http://localhost:11434` with `qwen2.5:7b` and `nomic-embed-text` pulled. Document minimum hardware in the README and recommend a smaller model for CPU-only machines.
