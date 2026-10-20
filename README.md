@@ -26,7 +26,7 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 005  | CLI: init, run, status        | done   |
 | 006  | Privacy guard                 | done   |
 | 007  | Rules layer                   | done   |
-| 008  | Ollama classifier             | next   |
+| 008  | Ollama classifier             | done   |
 
 ## How the privacy promise is enforced
 

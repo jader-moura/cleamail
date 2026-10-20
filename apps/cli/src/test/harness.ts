@@ -59,6 +59,9 @@ export type HarnessOptions = {
   readonly connected?: boolean;
   readonly answers?: readonly string[];
   readonly ollama?: boolean;
+  /** What the stubbed Ollama reports as installed. */
+  readonly models?: readonly string[];
+  readonly classifierModel?: string;
   readonly env?: Record<string, string | undefined>;
   readonly code?: string;
   readonly token?: OAuthToken;
@@ -124,8 +127,9 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
       Promise.resolve(
         options.ollama === false
           ? { ok: false, error: { code: "provider_unavailable", message: "not reachable" } }
-          : ok(["qwen2.5:7b", "nomic-embed-text"]),
+          : ok(options.models ?? ["qwen2.5:7b", "nomic-embed-text"]),
       ),
+    classifierModel: options.classifierModel ?? "qwen2.5:7b",
   };
 
   return {

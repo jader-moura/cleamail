@@ -12,6 +12,7 @@ import {
   StaticAccessTokenProvider,
 } from "./test/providers.js";
 import { afterEach, describe, expect, it } from "vitest";
+import { createOllamaClassifier } from "./test/llm.js";
 import { installNetworkGuard, type NetworkGuard } from "./guard.js";
 
 /**
@@ -47,7 +48,20 @@ function respond(url: string): Response {
           ? { messages: [{ id: "m1", threadId: "t1" }] }
           : url.includes("oauth2.googleapis.com")
             ? { access_token: "at-1", refresh_token: "rt-1", expires_in: 3600 }
-            : {};
+            : url.includes("/api/chat")
+              ? {
+                  model: "test-model",
+                  message: {
+                    role: "assistant",
+                    content: JSON.stringify({
+                      category: "promotion",
+                      importance: 0.1,
+                      confidence: 0.9,
+                      reason: "A marketing message.",
+                    }),
+                  },
+                }
+              : {};
 
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -82,6 +96,35 @@ describe("the real pipeline under the privacy guard", () => {
     expect(guard.violations).toStrictEqual([]);
     expect([...new Set(guard.attempts.map((attempt) => attempt.host))]).toStrictEqual([
       "gmail.googleapis.com",
+    ]);
+  });
+
+  it("classifies an email without the content leaving this machine", async () => {
+    guard = installNetworkGuard({ respond: (url) => respond(url) });
+
+    const classifier = createOllamaClassifier({ model: "test-model" });
+    expect(classifier.ok).toBe(true);
+    if (!classifier.ok) return;
+
+    const result = await classifier.value.classify({
+      email: {
+        id: emailId("m1"),
+        from: { address: "deals@shop.example", name: "Shop" },
+        to: [{ address: "user@example.com" }],
+        subject: "70% off this weekend",
+        snippet: "Our biggest sale",
+        bodyText: "Shop now before it ends.",
+        headers: {},
+        providerLabels: ["INBOX", "CATEGORY_PROMOTIONS"],
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(guard.violations).toStrictEqual([]);
+
+    // The whole point: the body was sent to this machine and nowhere else.
+    expect([...new Set(guard.attempts.map((attempt) => attempt.host))]).toStrictEqual([
+      "localhost",
     ]);
   });
 

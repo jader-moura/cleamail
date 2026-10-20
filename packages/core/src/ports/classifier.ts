@@ -5,11 +5,17 @@ import type {
 } from "../domain/classification.js";
 import type { ClassifiableEmail } from "../domain/email.js";
 import type { Result } from "../result.js";
+import type { RuleHint } from "../rules/types.js";
 
 export type ClassificationRequest = {
   readonly email: ClassifiableEmail;
   /** Past user corrections, used as few-shot examples. */
   readonly examples?: readonly ClassificationExample[];
+  /**
+   * Weak signals the rules layer gathered without deciding. Passing them on is what keeps a
+   * non-terminal rule match from being wasted work.
+   */
+  readonly hints?: readonly RuleHint[];
 };
 
 /**

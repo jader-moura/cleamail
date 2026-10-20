@@ -21,12 +21,12 @@ which needs a Google OAuth client (see [gmail-setup.md](../gmail-setup.md)).
 
 ## v0.1 - 2. Classify
 
-| ID  | Spec                                                         | Status |
-| --- | ------------------------------------------------------------ | ------ |
-| 007 | [Rules layer](007-rules-layer.md)                            | done   |
-| 008 | Ollama classifier adapter, versioned prompts, Zod validation | next   |
-| 009 | Dry-run report in the CLI                                    | todo   |
-| 010 | Evals package and eval set v1 (300 synthetic emails)         | todo   |
+| ID  | Spec                                                                                     | Status |
+| --- | ---------------------------------------------------------------------------------------- | ------ |
+| 007 | [Rules layer](007-rules-layer.md)                                                        | done   |
+| 008 | [Ollama classifier adapter, versioned prompts, Zod validation](008-ollama-classifier.md) | done   |
+| 009 | Dry-run report in the CLI                                                                | next   |
+| 010 | Evals package and eval set v1 (300 synthetic emails)                                     | todo   |
 
 Gate: a dry-run report worth trusting.
 

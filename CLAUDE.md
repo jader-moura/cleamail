@@ -205,5 +205,5 @@ Before saying a task is done: run `pnpm lint && pnpm typecheck && pnpm test`. If
 - Desktop app (Tauri or Electron) wrapping the same server and dashboard: double-click installer, tray icon, runs on startup, native notifications ("3 emails need you, 41 cleaned").
 - Ollama setup guided from inside the app, so non-technical users never open a terminal.
 
-Current phase: **v0.1, 1. Foundations** - specs 001 to 006 are done; the gate also wants one run
-against a real mailbox before phase 2.
+Current phase: **v0.1, 2. Classify** - specs 001 to 008 are done. The Foundations gate also wants
+one run against a real mailbox, which needs a Google OAuth client.

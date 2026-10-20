@@ -12,12 +12,12 @@ import {
   StaticAccessTokenProvider,
   startLoopbackReceiver,
 } from "@cleamail/providers";
+import { checkOllama, DEFAULT_CLASSIFIER_MODEL, OLLAMA_DEFAULT_URL } from "@cleamail/llm";
 import { openStore } from "@cleamail/store";
 import { runCli } from "./cli.js";
 import type { CliDeps } from "./deps.js";
 import { EXIT } from "./exit.js";
 import { createConsoleLogger } from "./logger.js";
-import { checkOllama, OLLAMA_DEFAULT_URL } from "./ollama.js";
 
 /** Opens the user's default browser without a dependency. Failure is not fatal: the URL is shown. */
 function openUrl(url: string): Promise<void> {
@@ -51,6 +51,7 @@ async function main(): Promise<number> {
   const tokens = new KeyringTokenStore();
   const secrets = new KeyringSecretStore();
   const ollamaUrl = process.env["CLEAMAIL_OLLAMA_URL"] ?? OLLAMA_DEFAULT_URL;
+  const classifierModel = process.env["CLEAMAIL_MODEL"] ?? DEFAULT_CLASSIFIER_MODEL;
 
   const deps: CliDeps = {
     out: (line) => {
@@ -103,7 +104,8 @@ async function main(): Promise<number> {
         }),
     },
 
-    checkOllama: () => checkOllama(ollamaUrl),
+    checkOllama: () => checkOllama({ baseUrl: ollamaUrl }),
+    classifierModel,
   };
 
   try {

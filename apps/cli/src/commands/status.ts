@@ -1,3 +1,4 @@
+import { hasModel } from "@cleamail/llm";
 import type { CliDeps } from "../deps.js";
 import { EXIT } from "../exit.js";
 import { requireAccount } from "./account.js";
@@ -33,6 +34,18 @@ export async function statusCommand(deps: CliDeps): Promise<number> {
       ? `ollama     running (${ollama.value.length} model${ollama.value.length === 1 ? "" : "s"})`
       : "ollama     not reachable",
   );
+
+  // The model is a setting, so it is worth printing: a user who overrode it should be able to see
+  // that cleamail agrees, and one who has not pulled it should find out here rather than mid-run.
+  const installed = ollama.ok && hasModel(ollama.value, deps.classifierModel);
+  deps.out(
+    `model      ${deps.classifierModel}${ollama.ok ? (installed ? "" : " (not pulled yet)") : ""}`,
+  );
+
+  if (ollama.ok && !installed) {
+    deps.out("");
+    deps.out(`Pull it with: ollama pull ${deps.classifierModel}`);
+  }
 
   return EXIT.ok;
 }

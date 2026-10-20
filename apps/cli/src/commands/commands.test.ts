@@ -119,6 +119,25 @@ describe("status", () => {
       expect(output).toContain("messages   1");
       expect(output).toContain(NOW.toISOString());
       expect(output).toContain("ollama     running (2 models)");
+      expect(output).toContain("model      qwen2.5:7b");
+      expect(output).not.toContain("not pulled yet");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("says when the configured model has not been pulled, and how to pull it", async () => {
+    const harness = await createHarness({
+      classifierModel: "qwen3:8b",
+      models: ["qwen3-vl:8b-instruct"],
+    });
+
+    try {
+      expect(await runCli(["status"], harness.deps)).toBe(EXIT.ok);
+
+      const output = harness.output();
+      expect(output).toContain("model      qwen3:8b (not pulled yet)");
+      expect(output).toContain("ollama pull qwen3:8b");
     } finally {
       harness.close();
     }

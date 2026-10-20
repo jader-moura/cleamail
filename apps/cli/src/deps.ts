@@ -38,4 +38,6 @@ export type CliDeps = {
   };
 
   readonly checkOllama: () => Promise<Result<readonly string[]>>;
+  /** The classifier model in use, from `CLEAMAIL_MODEL` or the documented default. */
+  readonly classifierModel: string;
 };

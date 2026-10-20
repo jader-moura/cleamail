@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@cleamail/core": "workspace:*",
+    "@cleamail/llm": "workspace:*",
     "@cleamail/providers": "workspace:*",
     "@cleamail/store": "workspace:*",
     "zod": "^4.1.12"
