@@ -1,0 +1,36 @@
+{
+  "name": "@cleamail/privacy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The privacy guard: proves cleamail only talks to the user's mail provider and localhost.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@cleamail/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cleamail/config": "workspace:*",
+    "@cleamail/providers": "workspace:*",
+    "@types/node": "^22.19.1",
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
