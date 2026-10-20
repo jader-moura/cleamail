@@ -14,9 +14,10 @@ Status: `todo` | `in progress` | `done`
 | 003 | [Store: SQLite + Drizzle schema](003-store-sqlite.md)                  | done   |
 | 004 | [Gmail provider and OAuth with keychain tokens](004-gmail-provider.md) | done   |
 | 005 | [CLI skeleton and `fetch` into SQLite](005-cli-fetch.md)               | done   |
-| 006 | [Privacy guard: outbound host allowlist test](006-privacy-guard.md)    | next   |
+| 006 | [Privacy guard: outbound host allowlist test](006-privacy-guard.md)    | done   |
 
-Gate: reads the inbox reliably.
+Gate: reads the inbox reliably. Code complete; the gate also wants one run against a real mailbox,
+which needs a Google OAuth client (see [gmail-setup.md](../gmail-setup.md)).
 
 ## v0.1 - 2. Classify
 

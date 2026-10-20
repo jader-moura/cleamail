@@ -13,8 +13,9 @@ Three promises:
 
 ## Status
 
-Early development: **v0.1, phase 1 (Foundations)**. Not usable yet. Progress is tracked as small
-specs in [docs/specs](docs/specs/README.md).
+Early development: **v0.1, phase 1 (Foundations) is code complete**. It can connect a Gmail account
+and read mail into a local database. It does not classify or change anything yet. Progress is
+tracked as small specs in [docs/specs](docs/specs/README.md).
 
 | Spec | What                          | Status |
 | ---- | ----------------------------- | ------ |
@@ -23,7 +24,17 @@ specs in [docs/specs](docs/specs/README.md).
 | 003  | SQLite store                  | done   |
 | 004  | Gmail provider and OAuth      | done   |
 | 005  | CLI: init, run, status        | done   |
-| 006  | Privacy guard                 | next   |
+| 006  | Privacy guard                 | done   |
+| 007  | Rules layer                   | next   |
+
+## How the privacy promise is enforced
+
+Not by a statement in this README. `packages/privacy` installs a guard over `fetch`, the `http` and
+`https` request functions and DNS, runs the real Gmail client and the real OAuth flow through it,
+and fails if anything reaches a host other than your mail provider or your own machine. A second
+check scans every source, HTML and CSS file in the repository for a host that is neither contacted
+nor documented, so a CDN script or a Google Font cannot appear unnoticed. A third asserts that a
+whole fetch-and-store run makes no outbound call at all.
 
 ## Connecting a mailbox
 
@@ -74,6 +85,7 @@ packages/
   llm/        # Ollama adapter, versioned prompts
   store/      # SQLite + Drizzle
   evals/      # dataset, metrics, benchmark runner
+  privacy/    # the outbound-host guard, used by the other packages' tests
   config/     # shared tsconfig, ESLint, Prettier, Vitest
 ```
 
