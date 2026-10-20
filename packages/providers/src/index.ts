@@ -47,6 +47,14 @@ export {
   type KeyringEntryFactory,
 } from "./credentials/keyring-token-store.js";
 export { InMemoryTokenStore } from "./credentials/memory-token-store.js";
+export {
+  GOOGLE_CLIENT_KEY,
+  InMemorySecretStore,
+  KeyringSecretStore,
+  loadClientCredentials,
+  saveClientCredentials,
+  type SecretStore,
+} from "./credentials/secret-store.js";
 export { isExpired, parseToken, serializeToken } from "./credentials/token-codec.js";
 export {
   GMAIL_ALLOWED_HOSTS,
