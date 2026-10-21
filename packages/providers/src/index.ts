@@ -25,7 +25,16 @@ export {
   type RefreshOptions,
   type TokenExchangeOptions,
 } from "./gmail/oauth.js";
-export { FORBIDDEN_SCOPES, GMAIL_SCOPES, scopeString } from "./gmail/scopes.js";
+export {
+  accessOfScopes,
+  canModify,
+  FORBIDDEN_SCOPES,
+  GMAIL_READONLY_SCOPES,
+  GMAIL_SCOPES,
+  scopeString,
+  scopesFor,
+  type GmailAccess,
+} from "./gmail/scopes.js";
 export {
   GmailListResponseSchema,
   GmailMessageSchema,

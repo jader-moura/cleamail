@@ -11,6 +11,11 @@ import type { CliDeps } from "../deps.js";
 import { EXIT } from "../exit.js";
 import type { ClientCredentials, Result } from "../ports.js";
 
+export type InitOptions = {
+  /** Ask Google for access that cannot change anything. For trying cleamail out safely. */
+  readonly readOnly: boolean;
+};
+
 const SETUP_GUIDE = "https://github.com/jadermoura/cleamail/blob/main/docs/gmail-setup.md";
 
 /**
@@ -20,9 +25,23 @@ const SETUP_GUIDE = "https://github.com/jadermoura/cleamail/blob/main/docs/gmail
  * blocker, because nothing is classified yet), then do the OAuth dance, then write the account.
  * Nothing is stored until Google has actually said yes.
  */
-export async function initCommand(deps: CliDeps): Promise<number> {
+export async function initCommand(
+  deps: CliDeps,
+  options: InitOptions = { readOnly: false },
+): Promise<number> {
   deps.out("cleamail runs entirely on your machine. Nothing here is sent anywhere else.");
   deps.out("");
+
+  if (options.readOnly) {
+    deps.out(
+      "Read-only mode: cleamail will ask Google for access that cannot change your mailbox.",
+    );
+    deps.out(
+      "Google itself will refuse any change, so nothing can be labelled, archived or moved.",
+    );
+    deps.out("Re-run `cleamail init` without --read-only when you want it to act.");
+    deps.out("");
+  }
 
   const ollama = await deps.checkOllama();
   if (ollama.ok) {
@@ -57,6 +76,7 @@ export async function initCommand(deps: CliDeps): Promise<number> {
       redirectUri: receiver.redirectUri,
       state,
       codeChallenge: pkce.challenge,
+      access: options.readOnly ? "readonly" : "modify",
     });
 
     deps.out("Opening Google in your browser to authorize read and label access.");

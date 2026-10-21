@@ -14,11 +14,15 @@ Commands
   undo                 Reverse the last applied actions    (phase 3)
   eval                 Measure accuracy on the eval set    (phase 2)
 
+Options for init
+  --read-only          Ask Google for access that cannot change your mailbox
+
 Options for run
   --since <window>     7d, 24h or an ISO date. Default: 7d
   --max <n>            Messages per page, 1 to 500. Default: 100
   --dry-run            Change nothing in the mailbox. Always on in this phase
   --no-classify        Fetch only, without waiting on the model
+  --redact             Print decisions without subjects, senders or reasons
 
 Environment
   CLEAMAIL_MODEL       Ollama model for classification. Default: qwen2.5:7b

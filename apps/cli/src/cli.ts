@@ -39,7 +39,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
 
   switch (command) {
     case "init":
-      return initCommand(deps);
+      return initWithFlags(deps, rest);
 
     case "status":
       return statusCommand(deps);
@@ -58,7 +58,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
 }
 
 function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
-  let values: { since?: string; max?: string; "no-classify"?: boolean };
+  let values: { since?: string; max?: string; "no-classify"?: boolean; redact?: boolean };
 
   try {
     ({ values } = parseArgs({
@@ -72,6 +72,8 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
         "dry-run": { type: "boolean" },
         // For fetching without waiting on a model.
         "no-classify": { type: "boolean" },
+        // Print decisions without the mail they came from.
+        redact: { type: "boolean" },
       },
       allowPositionals: false,
     }));
@@ -92,5 +94,25 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
     since: values.since ?? "7d",
     max,
     classify: values["no-classify"] !== true,
+    redact: values.redact === true,
   });
+}
+
+/** `init --read-only` asks Google for access that cannot change the mailbox. */
+function initWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
+  let values: { "read-only"?: boolean };
+
+  try {
+    ({ values } = parseArgs({
+      args: [...argv],
+      options: { "read-only": { type: "boolean" } },
+      allowPositionals: false,
+    }));
+  } catch (cause) {
+    deps.err(cause instanceof Error ? cause.message : "Could not read the options.");
+
+    return Promise.resolve(EXIT.usage);
+  }
+
+  return initCommand(deps, { readOnly: values["read-only"] === true });
 }

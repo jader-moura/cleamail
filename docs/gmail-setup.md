@@ -17,14 +17,20 @@ You only do this once.
 
 1. Go to **APIs and services > OAuth consent screen**.
 2. Choose **External**, and fill in an app name and your own email address.
-3. On the scopes step, add exactly one scope:
+3. On the scopes step, add the scope you want cleamail to have. Add one, or both if you plan to try
+   read-only first and allow changes later:
 
    ```
+   https://www.googleapis.com/auth/gmail.readonly
    https://www.googleapis.com/auth/gmail.modify
    ```
 
-   This lets cleamail read messages and change labels, including moving a message to Trash. It
-   cannot send mail, and it cannot delete anything permanently.
+   `gmail.modify` lets cleamail read messages and change labels, including moving a message to
+   Trash. It cannot send mail, and it cannot delete anything permanently.
+
+   `gmail.readonly` lets it read and nothing else. Google refuses any change made with it, so the
+   guarantee does not depend on cleamail being correct. Use it with `cleamail init --read-only` to
+   try the classifier against your real mail before trusting it with anything.
 
 4. On the test users step, add your own Gmail address. While the app is in testing, only the
    addresses you list here can authorize it, which is exactly what you want.
@@ -44,6 +50,15 @@ what actually protects the exchange.
 ```bash
 npx cleamail init
 ```
+
+To try it read-only first, so nothing can be changed even by a bug:
+
+```bash
+npx cleamail init --read-only
+```
+
+`cleamail status` prints which of the two you granted, read back from the stored token rather than
+from a setting. Re-run `cleamail init` without the flag when you want cleamail to act.
 
 The wizard asks for the client id and secret, opens your browser, and waits on a one-shot listener
 at `http://127.0.0.1:<random port>/callback`. After you approve, the tab says you can close it and

@@ -227,3 +227,126 @@ describe("formatReport", () => {
     expect(output).not.toContain("\u001b");
   });
 });
+
+describe("the redacted report", () => {
+  function redacted(pairs: readonly (readonly [Email, ClassificationOutcome])[]): string {
+    return formatReport({
+      emails: pairs.map(([email]) => email),
+      outcomes: pairs.map(([, result]) => result),
+      model: "test-model",
+      redact: true,
+    }).join("\n");
+  }
+
+  const SUBJECT = "Mortgage payment of 1,240.00 received";
+  const SENDER = { address: "receipts@your-bank.example", name: "Your Bank" };
+
+  it("prints no subject, no address and no model-written reason", () => {
+    const output = redacted([
+      [anEmail({ id: emailId("a"), subject: SUBJECT, from: SENDER }), outcome("a", "important")],
+    ]);
+
+    expect(output).not.toContain(SUBJECT);
+    expect(output).not.toContain("Mortgage");
+    expect(output).not.toContain("1,240.00");
+    expect(output).not.toContain("receipts@your-bank.example");
+    expect(output).not.toContain("Your Bank");
+    // The reason is a paraphrase of the email, so it goes too.
+    expect(output).not.toContain("Because it looks like");
+  });
+
+  it("still says what cleamail decided, and how", () => {
+    const output = redacted([
+      [anEmail({ id: emailId("a"), subject: SUBJECT, from: SENDER }), outcome("a", "important")],
+    ]);
+
+    expect(output).toContain("important");
+    expect(output).toContain("0.90");
+    expect(output).toContain("model");
+    expect(output).toContain("classified    1");
+  });
+
+  it("numbers the rows so the mailbox owner can point at one", () => {
+    const output = redacted([
+      [anEmail({ id: emailId("a") }), outcome("a", "fyi")],
+      [anEmail({ id: emailId("b") }), outcome("b", "promotion")],
+    ]);
+
+    expect(output).toContain("    1  ");
+    expect(output).toContain("    2  ");
+  });
+
+  it("keeps the date, which is how the owner finds the email again", () => {
+    const output = redacted([
+      [
+        anEmail({ id: emailId("a"), receivedAt: new Date("2026-10-18T09:30:00.000Z") }),
+        outcome("a", "fyi"),
+      ],
+    ]);
+
+    expect(output).toContain("2026-10-18 09:30");
+  });
+
+  it("marks review items and unreadable output without naming the email", () => {
+    const output = redacted([
+      [
+        anEmail({ id: emailId("a"), subject: SUBJECT }),
+        outcome("a", undefined, { reviewReason: "invalid_model_output" }),
+      ],
+    ]);
+
+    expect(output).toContain("unreadable");
+    expect(output).toContain("review:invalid_model_output");
+    expect(output).not.toContain(SUBJECT);
+  });
+
+  it("says plainly what it is, so nobody mistakes it for the full report", () => {
+    const output = redacted([[anEmail({ id: emailId("a") }), outcome("a", "fyi")]]);
+
+    expect(output).toContain("no subjects, senders or reasons");
+    expect(output.trimEnd().endsWith("Nothing in your mailbox was changed.")).toBe(true);
+  });
+
+  it("leaks nothing even when every field is hostile", () => {
+    const output = redacted([
+      [
+        anEmail({
+          id: emailId("SECRETID"),
+          subject: "SECRETSUBJECT",
+          snippet: "SECRETSNIPPET",
+          bodyText: "SECRETBODY",
+          from: { address: "SECRET@sender.example", name: "SECRETNAME" },
+        }),
+        outcome("a", "fyi"),
+      ],
+    ]);
+
+    for (const leak of [
+      "SECRETSUBJECT",
+      "SECRETSNIPPET",
+      "SECRETBODY",
+      "SECRET@sender.example",
+      "SECRETNAME",
+    ]) {
+      expect(output).not.toContain(leak);
+    }
+  });
+});
+
+describe("the full report, for contrast", () => {
+  it("does show the subject and sender, which is exactly why --redact exists", () => {
+    const output = report([
+      [
+        anEmail({
+          id: emailId("a"),
+          subject: "Mortgage payment received",
+          from: { address: "receipts@your-bank.example", name: "Your Bank" },
+        }),
+        outcome("a", "important"),
+      ],
+    ]);
+
+    expect(output).toContain("Mortgage payment received");
+    expect(output).toContain("receipts@your-bank.example");
+  });
+});

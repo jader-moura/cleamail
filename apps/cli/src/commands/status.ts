@@ -1,4 +1,5 @@
 import { hasModel } from "@cleamail/llm";
+import { canModify } from "@cleamail/providers";
 import type { CliDeps } from "../deps.js";
 import { EXIT } from "../exit.js";
 import { requireAccount } from "./account.js";
@@ -18,6 +19,20 @@ export async function statusCommand(deps: CliDeps): Promise<number> {
     const lastSync = await deps.store.emails.lastSyncAt(account.value.id);
 
     deps.out(`mailbox    ${account.value.address} (${account.value.kind})`);
+
+    // Read back off the stored token rather than from a setting, because the only thing that
+    // decides what cleamail can do is what Google actually granted.
+    const token = await deps.tokens.get(account.value.id);
+    deps.out(
+      `access     ${
+        token.ok && token.value !== undefined
+          ? canModify(token.value.scopes)
+            ? "read and change labels"
+            : "read-only (cannot change your mailbox)"
+          : "unknown"
+      }`,
+    );
+
     deps.out(`messages   ${counted.ok ? counted.value : "unknown"}`);
     deps.out(`last sync  ${lastSync.ok ? formatDate(lastSync.value) : "unknown"}`);
   } else {

@@ -11,6 +11,8 @@ export type RunOptions = {
   readonly max: number;
   /** When false, the run stops after fetching and says why it went no further. */
   readonly classify: boolean;
+  /** Print the decisions without the subjects, senders or reasons they came from. */
+  readonly redact?: boolean;
 };
 
 /**
@@ -150,6 +152,7 @@ export async function runCommand(deps: CliDeps, options: RunOptions): Promise<nu
     emails: stored.value,
     outcomes: outcomes.value,
     model: deps.classifierModel,
+    redact: options.redact === true,
   })) {
     deps.out(line);
   }

@@ -83,6 +83,23 @@ describe("buildAuthorizationUrl", () => {
     expect(url.searchParams.get("scope")).toBe("https://www.googleapis.com/auth/gmail.modify");
   });
 
+  it("requests only gmail.readonly when asked for read-only access", () => {
+    const readOnly = new URL(
+      buildAuthorizationUrl({
+        clientId: "client-1",
+        redirectUri: "http://127.0.0.1:1234/callback",
+        state: "state-1",
+        codeChallenge: "challenge-1",
+        access: "readonly",
+      }),
+    );
+
+    expect(readOnly.searchParams.get("scope")).toBe(
+      "https://www.googleapis.com/auth/gmail.readonly",
+    );
+    expect(readOnly.host).toBe("accounts.google.com");
+  });
+
   it("redirects to loopback", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:1234/callback");
   });

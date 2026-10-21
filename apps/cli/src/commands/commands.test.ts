@@ -45,6 +45,29 @@ describe("run", () => {
     }
   });
 
+  it("redacts the report when asked, printing no subject or sender", async () => {
+    const harness = await createHarness({
+      emails: [
+        anEmail({
+          subject: "Mortgage payment received",
+          from: { address: "receipts@your-bank.example", name: "Your Bank" },
+        }),
+      ],
+    });
+
+    try {
+      expect(await runCli(["run", "--redact"], harness.deps)).toBe(EXIT.ok);
+
+      const output = harness.output();
+      expect(output).toContain("no subjects, senders or reasons");
+      expect(output).toContain("classified    1");
+      expect(output).not.toContain("Mortgage payment received");
+      expect(output).not.toContain("receipts@your-bank.example");
+    } finally {
+      harness.close();
+    }
+  });
+
   it("fetches without waiting on a model when asked not to classify", async () => {
     const harness = await createHarness({ emails: [anEmail()] });
 
@@ -392,6 +415,37 @@ describe("init", () => {
       expect(harness.errors()).toContain("Nothing was stored");
 
       expect(await harness.tokens.get(ACCOUNT.id)).toStrictEqual({ ok: true, value: undefined });
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("asks Google for read-only access when told to, and says so first", async () => {
+    const harness = await createHarness({ connected: false, answers: ["client-xyz", ""] });
+
+    try {
+      await runCli(["init", "--read-only"], harness.deps);
+
+      const output = harness.output();
+      expect(output).toContain("Read-only mode");
+      expect(output).toContain("cannot change your mailbox");
+      // What matters is the scope actually sent to Google, not the reassuring text above it.
+      expect(output).toContain("scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly");
+      expect(output).not.toContain("gmail.modify");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("asks for modify access by default", async () => {
+    const harness = await createHarness({ connected: false, answers: ["client-xyz", ""] });
+
+    try {
+      await runCli(["init"], harness.deps);
+
+      const output = harness.output();
+      expect(output).toContain("scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.modify");
+      expect(output).not.toContain("Read-only mode");
     } finally {
       harness.close();
     }

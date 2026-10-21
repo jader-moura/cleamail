@@ -26,6 +26,16 @@ export type ReportInput = {
   readonly outcomes: readonly ClassificationOutcome[];
   /** The model that answered, so a report can be compared against another run. */
   readonly model: string;
+  /**
+   * Print nothing that came out of an email.
+   *
+   * For showing a run to someone else, or pasting it into a bug report. Subjects and senders are
+   * obviously content, but so is `reason`: the model writes it by paraphrasing the email, so
+   * "confirms your mortgage payment of 1,240.00" is just the email again in fewer words. Redacted
+   * rows therefore carry only what cleamail concluded, numbered so the owner of the mailbox can
+   * line a row up against their own inbox and say which ones are wrong.
+   */
+  readonly redact?: boolean;
 };
 
 /**
@@ -95,6 +105,8 @@ export function formatReport(input: ReportInput): readonly string[] {
     return ["Nothing to classify in that window."];
   }
 
+  if (input.redact === true) return redactedReport(pairings, input.model);
+
   const review = pairings.filter((pairing) => pairing.outcome.reviewReason !== undefined);
   const settled = pairings.filter((pairing) => pairing.outcome.reviewReason === undefined);
 
@@ -125,6 +137,36 @@ export function formatReport(input: ReportInput): readonly string[] {
   lines.push("Nothing in your mailbox was changed.");
 
   return lines;
+}
+
+/**
+ * The same run with every trace of the mail itself removed.
+ *
+ * One numbered row per email: when it arrived, what cleamail decided, how sure it was, and whether
+ * a rule or the model decided it. The date stays because it is what lets the mailbox owner find the
+ * email again; no subject, no address and no model-written reason appear at all.
+ */
+function redactedReport(pairings: readonly Pairing[], model: string): readonly string[] {
+  const rows = pairings.map((pairing, index) => {
+    const { classification, reviewReason } = pairing.outcome;
+    const when = pairing.email.receivedAt.toISOString().slice(0, 16).replace("T", " ");
+    const category = classification?.category ?? "unreadable";
+    const confidence = classification === undefined ? "-" : classification.confidence.toFixed(2);
+    const source = classification?.source ?? "-";
+    const flag = reviewReason === undefined ? "" : ` review:${reviewReason}`;
+
+    return `  ${String(index + 1).padStart(3)}  ${when}  ${category.padEnd(13)}${confidence.padEnd(6)}${source.padEnd(6)}${flag}`;
+  });
+
+  return [
+    "redacted report: decisions only, no subjects, senders or reasons",
+    `  row  received          category     conf  by`,
+    ...rows,
+    "",
+    ...summary(pairings, model),
+    "",
+    "Nothing in your mailbox was changed.",
+  ];
 }
 
 function section(heading: string, body: readonly string[]): readonly string[] {

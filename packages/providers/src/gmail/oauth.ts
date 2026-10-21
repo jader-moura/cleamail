@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import { err, failure, ok, type OAuthToken, type Result } from "@cleamail/core";
 import { z } from "zod";
 import { GOOGLE_AUTH_URL, GOOGLE_TOKEN_URL } from "../hosts.js";
-import { scopeString } from "./scopes.js";
+import { scopeString, type GmailAccess } from "./scopes.js";
 
 /**
  * Google's installed-application flow: PKCE over a loopback redirect.
@@ -39,6 +39,8 @@ export type AuthorizationUrlOptions = {
   readonly codeChallenge: string;
   /** Pass the address so Google preselects the right mailbox. */
   readonly loginHint?: string;
+  /** Defaults to `modify`. `readonly` asks Google for access that cannot change anything. */
+  readonly access?: GmailAccess;
 };
 
 export function buildAuthorizationUrl(options: AuthorizationUrlOptions): string {
@@ -47,7 +49,7 @@ export function buildAuthorizationUrl(options: AuthorizationUrlOptions): string 
   url.searchParams.set("client_id", options.clientId);
   url.searchParams.set("redirect_uri", options.redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", scopeString());
+  url.searchParams.set("scope", scopeString(options.access ?? "modify"));
   url.searchParams.set("state", options.state);
   url.searchParams.set("code_challenge", options.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
