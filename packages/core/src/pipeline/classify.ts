@@ -27,6 +27,13 @@ export type ClassificationOutcome = {
   readonly hints: readonly RuleHint[];
   /** Set when a human should look at this rather than cleamail acting on it. */
   readonly reviewReason?: ReviewReason;
+  /**
+   * cleamail's own words about what went wrong, for the eval report and the dashboard.
+   *
+   * Written by the adapter, never by the model and never from the email: an eval that can say "17
+   * unclassified" but not why sends you to a debugger, and this is the cheapest way to say why.
+   */
+  readonly reviewDetail?: string;
 };
 
 export type ClassifyOptions = {
@@ -86,6 +93,7 @@ export async function classifyEmail(
       emailId: email.id,
       hints: outcome.hints,
       reviewReason: "invalid_model_output",
+      reviewDetail: classified.error.message,
     });
   }
 

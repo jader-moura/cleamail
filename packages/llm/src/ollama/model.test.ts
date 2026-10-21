@@ -152,6 +152,21 @@ describe("reading the answer", () => {
     expect(result.error.code).toBe("invalid_model_output");
   });
 
+  it.each([
+    ["an empty reply", ""],
+    ["a reply of whitespace", "   "],
+  ])("explains %s as a thinking model, naming a model that works", async (_name, content) => {
+    const { model } = modelWith([{ kind: "content", content }]);
+    const result = await model.complete({ email: email() });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.error.code).toBe("invalid_model_output");
+    expect(result.error.message).toContain("reasoning and no classification");
+    expect(result.error.message).toContain(DEFAULT_CLASSIFIER_MODEL);
+  });
+
   it("never puts the rejected value in the error message, which gets logged", async () => {
     const secret = "mortgage account 4455 6677";
     const { model } = modelWith([

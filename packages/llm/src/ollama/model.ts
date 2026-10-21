@@ -80,6 +80,18 @@ export class OllamaClassificationModel implements ClassificationModel {
 
     if (!response.ok) return response;
 
+    // A model with a thinking mode spends the reply budget on reasoning and returns an empty
+    // message, so every email fails for the same reason with nothing to point at. Measured on
+    // qwen3-vl:8b: 13,571 characters of reasoning and no answer, even with the cap raised to 4000
+    // tokens. Worth its own message, because the fix is to change models and no amount of
+    // re-running will reveal that.
+    if (response.value.trim() === "") {
+      return failure(
+        "invalid_model_output",
+        `${this.model} answered with reasoning and no classification. Models that think before answering spend the whole reply on it. Use one without a thinking mode, such as ${DEFAULT_CLASSIFIER_MODEL}.`,
+      );
+    }
+
     const json = parseJson(response.value);
     if (json === undefined) {
       return failure(

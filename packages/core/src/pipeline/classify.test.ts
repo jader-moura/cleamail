@@ -186,6 +186,8 @@ describe("classifyEmail", () => {
     if (!result.ok) return;
 
     expect(result.value.reviewReason).toBe("invalid_model_output");
+    // Kept so a report can say why rather than only how many.
+    expect(result.value.reviewDetail).toBe("not JSON");
     expect(result.value.classification).toBeUndefined();
   });
 
