@@ -5,9 +5,16 @@ import {
   saveClientCredentials,
 } from "@cleamail/providers";
 import { FakeMailProvider } from "@cleamail/providers/testing";
+import { FakeClassifier } from "@cleamail/llm/testing";
 import { openInMemoryStore, type Store } from "@cleamail/store";
 import type { CliDeps } from "../deps.js";
-import type { LoopbackReceiver, MailAccount, OAuthToken } from "../ports.js";
+import type {
+  EmailClassifier,
+  LoopbackReceiver,
+  MailAccount,
+  OAuthToken,
+  Result,
+} from "../ports.js";
 
 export const NOW = new Date("2026-10-20T12:00:00.000Z");
 
@@ -62,6 +69,8 @@ export type HarnessOptions = {
   /** What the stubbed Ollama reports as installed. */
   readonly models?: readonly string[];
   readonly classifierModel?: string;
+  /** A classifier, or a reason one could not be built. Defaults to a working fake. */
+  readonly classifier?: Result<EmailClassifier>;
   readonly env?: Record<string, string | undefined>;
   readonly code?: string;
   readonly token?: OAuthToken;
@@ -130,6 +139,11 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
           : ok(options.models ?? ["qwen2.5:7b", "nomic-embed-text"]),
       ),
     classifierModel: options.classifierModel ?? "qwen2.5:7b",
+    makeClassifier: () => options.classifier ?? ok(new FakeClassifier()),
+
+    // Progress is a redrawn terminal line, so the harness drops it: a test asserting on the report
+    // should not have to filter counters out of the output.
+    progress: () => undefined,
   };
 
   return {

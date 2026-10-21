@@ -1,4 +1,5 @@
-import { emailId } from "@cleamail/core";
+import { emailId, ok } from "@cleamail/core";
+import { FakeClassifier } from "@cleamail/llm/testing";
 import { GOOGLE_CLIENT_KEY, loadClientCredentials } from "@cleamail/providers";
 import { describe, expect, it } from "vitest";
 import { runCli } from "../cli.js";
@@ -22,6 +23,100 @@ describe("run", () => {
         ok: true,
         value: 2,
       });
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("classifies what it fetched and prints the report", async () => {
+    const harness = await createHarness({
+      emails: [anEmail({ subject: "A question" }), anEmail({ id: emailId("msg-2") })],
+    });
+
+    try {
+      expect(await runCli(["run", "--dry-run", "--since", "7d"], harness.deps)).toBe(EXIT.ok);
+
+      const output = harness.output();
+      expect(output).toContain("Classifying 2 email(s) with qwen2.5:7b");
+      expect(output).toContain("classified    2");
+      expect(output).toContain("Nothing in your mailbox was changed.");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("fetches without waiting on a model when asked not to classify", async () => {
+    const harness = await createHarness({ emails: [anEmail()] });
+
+    try {
+      expect(await runCli(["run", "--no-classify"], harness.deps)).toBe(EXIT.ok);
+
+      expect(harness.output()).toContain("fetched   1");
+      expect(harness.output()).toContain("Skipped classification");
+      expect(harness.output()).not.toContain("classified");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("fails the run when the model server cannot be built", async () => {
+    const harness = await createHarness({
+      emails: [anEmail()],
+      classifier: {
+        ok: false,
+        error: { code: "config_invalid", message: "Ollama must run on this machine." },
+      },
+    });
+
+    try {
+      expect(await runCli(["run"], harness.deps)).toBe(EXIT.failure);
+
+      expect(harness.errors()).toContain("Ollama must run on this machine.");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("fails the run when the model server is unreachable, rather than reporting nothing", async () => {
+    const harness = await createHarness({
+      emails: [anEmail()],
+      classifier: ok(new FakeClassifier({ failWith: "provider_unavailable" })),
+    });
+
+    try {
+      expect(await runCli(["run"], harness.deps)).toBe(EXIT.failure);
+
+      expect(harness.errors()).toContain("Could not classify:");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("puts an email the model could not read into the review list and finishes", async () => {
+    const harness = await createHarness({
+      emails: [anEmail()],
+      classifier: ok(new FakeClassifier({ failWith: "invalid_model_output" })),
+    });
+
+    try {
+      expect(await runCli(["run"], harness.deps)).toBe(EXIT.ok);
+
+      const output = harness.output();
+      expect(output).toContain("needs review (1)");
+      expect(output).toContain("model output invalid");
+      expect(output).toContain("unreadable    1");
+    } finally {
+      harness.close();
+    }
+  });
+
+  it("says there is nothing to classify for an empty window", async () => {
+    const harness = await createHarness({ emails: [] });
+
+    try {
+      expect(await runCli(["run"], harness.deps)).toBe(EXIT.ok);
+
+      expect(harness.output()).toContain("nothing to classify");
     } finally {
       harness.close();
     }
@@ -143,12 +238,18 @@ describe("status", () => {
     }
   });
 
-  it("reports an unconnected mailbox without failing", async () => {
+  it("reports an unconnected mailbox without failing, and still shows the model", async () => {
     const harness = await createHarness({ connected: false });
 
     try {
       expect(await runCli(["status"], harness.deps)).toBe(EXIT.ok);
-      expect(harness.output()).toContain("mailbox    not connected");
+
+      const output = harness.output();
+      expect(output).toContain("mailbox    not connected");
+      // Someone still setting up is exactly who needs the model lines.
+      expect(output).toContain("ollama     running");
+      expect(output).toContain("model      qwen2.5:7b");
+      expect(output).toContain("Run `cleamail init` first.");
     } finally {
       harness.close();
     }

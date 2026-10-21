@@ -13,21 +13,20 @@ export async function statusCommand(deps: CliDeps): Promise<number> {
 
   deps.out(`database   ${deps.store.path}`);
 
-  if (!account.ok) {
-    deps.out("mailbox    not connected");
-    deps.out("");
-    deps.out(account.error.message);
+  if (account.ok) {
+    const counted = await deps.store.emails.countEmails(account.value.id);
+    const lastSync = await deps.store.emails.lastSyncAt(account.value.id);
 
-    return EXIT.ok;
+    deps.out(`mailbox    ${account.value.address} (${account.value.kind})`);
+    deps.out(`messages   ${counted.ok ? counted.value : "unknown"}`);
+    deps.out(`last sync  ${lastSync.ok ? formatDate(lastSync.value) : "unknown"}`);
+  } else {
+    deps.out("mailbox    not connected");
   }
 
-  const counted = await deps.store.emails.countEmails(account.value.id);
-  const lastSync = await deps.store.emails.lastSyncAt(account.value.id);
-
-  deps.out(`mailbox    ${account.value.address} (${account.value.kind})`);
-  deps.out(`messages   ${counted.ok ? counted.value : "unknown"}`);
-  deps.out(`last sync  ${lastSync.ok ? formatDate(lastSync.value) : "unknown"}`);
-
+  // The model lines print either way. Someone who has not connected a mailbox yet is exactly the
+  // person who needs to know whether their model is ready, so an early return here would hide it
+  // from the only user who is still setting up.
   const ollama = await deps.checkOllama();
   deps.out(
     ollama.ok
@@ -45,6 +44,11 @@ export async function statusCommand(deps: CliDeps): Promise<number> {
   if (ollama.ok && !installed) {
     deps.out("");
     deps.out(`Pull it with: ollama pull ${deps.classifierModel}`);
+  }
+
+  if (!account.ok) {
+    deps.out("");
+    deps.out(account.error.message);
   }
 
   return EXIT.ok;

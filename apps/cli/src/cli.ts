@@ -58,7 +58,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
 }
 
 function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
-  let values: { since?: string; max?: string };
+  let values: { since?: string; max?: string; "no-classify"?: boolean };
 
   try {
     ({ values } = parseArgs({
@@ -66,8 +66,12 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
       options: {
         since: { type: "string" },
         max: { type: "string" },
-        // Accepted and ignored: this phase never writes to the mailbox, dry run or not.
+        // Accepted and ignored: nothing is applied to the mailbox yet, so every run is a dry run.
+        // The flag exists now so the documented command keeps working once SPEC-011 makes it mean
+        // something.
         "dry-run": { type: "boolean" },
+        // For fetching without waiting on a model.
+        "no-classify": { type: "boolean" },
       },
       allowPositionals: false,
     }));
@@ -84,5 +88,9 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
     return Promise.resolve(EXIT.usage);
   }
 
-  return runCommand(deps, { since: values.since ?? "7d", max });
+  return runCommand(deps, {
+    since: values.since ?? "7d",
+    max,
+    classify: values["no-classify"] !== true,
+  });
 }

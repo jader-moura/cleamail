@@ -12,7 +12,12 @@ import {
   StaticAccessTokenProvider,
   startLoopbackReceiver,
 } from "@cleamail/providers";
-import { checkOllama, DEFAULT_CLASSIFIER_MODEL, OLLAMA_DEFAULT_URL } from "@cleamail/llm";
+import {
+  checkOllama,
+  createOllamaClassifier,
+  DEFAULT_CLASSIFIER_MODEL,
+  OLLAMA_DEFAULT_URL,
+} from "@cleamail/llm";
 import { openStore } from "@cleamail/store";
 import { runCli } from "./cli.js";
 import type { CliDeps } from "./deps.js";
@@ -106,6 +111,14 @@ async function main(): Promise<number> {
 
     checkOllama: () => checkOllama({ baseUrl: ollamaUrl }),
     classifierModel,
+    makeClassifier: () => createOllamaClassifier({ baseUrl: ollamaUrl, model: classifierModel }),
+
+    progress: (line) => {
+      // Only when a human is watching: redrawing a line in a pipe or a log file is noise.
+      if (!process.stderr.isTTY) return;
+
+      process.stderr.write(`\r\u001b[2K${line}`);
+    },
   };
 
   try {

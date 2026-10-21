@@ -25,8 +25,8 @@ which needs a Google OAuth client (see [gmail-setup.md](../gmail-setup.md)).
 | --- | ---------------------------------------------------------------------------------------- | ------ |
 | 007 | [Rules layer](007-rules-layer.md)                                                        | done   |
 | 008 | [Ollama classifier adapter, versioned prompts, Zod validation](008-ollama-classifier.md) | done   |
-| 009 | Dry-run report in the CLI                                                                | next   |
-| 010 | Evals package and eval set v1 (300 synthetic emails)                                     | todo   |
+| 009 | [Dry-run report in the CLI](009-dry-run-report.md)                                       | done   |
+| 010 | Evals package and eval set v1 (300 synthetic emails)                                     | next   |
 
 Gate: a dry-run report worth trusting.
 

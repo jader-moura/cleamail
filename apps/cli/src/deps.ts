@@ -1,4 +1,11 @@
-import type { Clock, LoopbackReceiver, MailProvider, OAuthToken, Result } from "./ports.js";
+import type {
+  Clock,
+  EmailClassifier,
+  LoopbackReceiver,
+  MailProvider,
+  OAuthToken,
+  Result,
+} from "./ports.js";
 import type { SecretStore, Store, TokenStore } from "./ports.js";
 import type { ClientCredentials } from "./ports.js";
 
@@ -40,4 +47,12 @@ export type CliDeps = {
   readonly checkOllama: () => Promise<Result<readonly string[]>>;
   /** The classifier model in use, from `CLEAMAIL_MODEL` or the documented default. */
   readonly classifierModel: string;
+  /** Built on demand: a run that never classifies should not need a reachable model server. */
+  readonly makeClassifier: () => Result<EmailClassifier>;
+
+  /**
+   * A line that replaces itself, for progress during a long run. Separate from `out` so the report
+   * is never interleaved with counters, and so tests can ignore it.
+   */
+  readonly progress: (line: string) => void;
 };

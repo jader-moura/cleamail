@@ -16,4 +16,6 @@ export * from "./ports/logger.js";
 export * from "./ports/mail-provider.js";
 export * from "./ports/token-store.js";
 
+export * from "./pipeline/classify.js";
+
 export * from "./rules/index.js";

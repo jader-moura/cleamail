@@ -1,5 +1,7 @@
+import { classifyEmails } from "@cleamail/core";
 import type { CliDeps } from "../deps.js";
 import type { Email } from "../ports.js";
+import { formatReport } from "../report.js";
 import { describeWindow, parseSince } from "../since.js";
 import { EXIT } from "../exit.js";
 import { connect } from "./account.js";
@@ -7,6 +9,8 @@ import { connect } from "./account.js";
 export type RunOptions = {
   readonly since: string;
   readonly max: number;
+  /** When false, the run stops after fetching and says why it went no further. */
+  readonly classify: boolean;
 };
 
 /**
@@ -16,8 +20,10 @@ export type RunOptions = {
 const MAX_PAGES = 50;
 
 /**
- * Fetches recent mail into the local database. Nothing is classified and nothing in the mailbox is
- * touched: this phase only has to read the inbox reliably.
+ * Fetches recent mail, classifies it, and prints the dry-run report.
+ *
+ * Nothing in the mailbox is touched. Actions arrive with the policy engine in SPEC-011, so for now
+ * every run is a dry run whether the flag is given or not, and the report says so.
  */
 export async function runCommand(deps: CliDeps, options: RunOptions): Promise<number> {
   const now = deps.clock.now();
@@ -87,8 +93,66 @@ export async function runCommand(deps: CliDeps, options: RunOptions): Promise<nu
   deps.out(`  new       ${inserted}`);
   deps.out(`  updated   ${updated}`);
   deps.out("");
-  deps.out("Nothing in your mailbox was changed.");
-  deps.out("Classification arrives in the next phase; `cleamail status` shows what is stored.");
+
+  if (!options.classify) {
+    deps.out("Skipped classification. Run without --no-classify to see the report.");
+
+    return EXIT.ok;
+  }
+
+  const stored = await deps.store.emails.listEmails({
+    accountId: account.id,
+    since: since.value,
+    limit: options.max,
+  });
+
+  if (!stored.ok) {
+    deps.err(`Could not read the stored mail: ${stored.error.message}`);
+
+    return EXIT.failure;
+  }
+
+  if (stored.value.length === 0) {
+    deps.out("No mail in that window, so there is nothing to classify.");
+
+    return EXIT.ok;
+  }
+
+  const classifier = deps.makeClassifier();
+  if (!classifier.ok) {
+    deps.err(classifier.error.message);
+
+    return EXIT.failure;
+  }
+
+  deps.out(`Classifying ${stored.value.length} email(s) with ${deps.classifierModel}`);
+  deps.out("The first one is slow while the model loads.");
+  deps.out("");
+
+  const outcomes = await classifyEmails(stored.value, {
+    classifier: classifier.value,
+    context: { accountAddress: account.address },
+    onProgress: (done, total) => {
+      // Overwriting one line keeps a 200-email run from scrolling the report away.
+      deps.progress(`  ${String(done)}/${String(total)}`);
+    },
+  });
+
+  deps.progress("");
+
+  if (!outcomes.ok) {
+    deps.err(`Could not classify: ${outcomes.error.message}`);
+
+    return EXIT.failure;
+  }
+
+  for (const line of formatReport({
+    emails: stored.value,
+    outcomes: outcomes.value,
+    model: deps.classifierModel,
+  })) {
+    deps.out(line);
+  }
 
   return EXIT.ok;
 }

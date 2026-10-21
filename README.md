@@ -27,6 +27,42 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 006  | Privacy guard                 | done   |
 | 007  | Rules layer                   | done   |
 | 008  | Ollama classifier             | done   |
+| 009  | Dry-run report in the CLI     | done   |
+| 010  | Evals and eval set v1         | next   |
+
+## What a dry run looks like
+
+`cleamail run --dry-run --since 7d` fetches recent mail, classifies it locally and prints what it
+thinks. Nothing in the mailbox is changed.
+
+```
+needs attention (2)
+  important    Your payment of 1,240.00 was received
+               Bank <receipts@your-bank.example>
+               This is a mortgage payment confirmation with real financial consequen…
+  needs_reply  Can you review the draft by Friday?
+               Sam <sam@client.example>
+               The sender is asking you to review a draft and respond by Friday, whi…
+
+needs review (1)
+  looks like a forgery  Urgent: verify your account
+                        PayPal Security <security@paypa1-verify… (looked like suspicious)
+
+would be cleaned (3)
+  newsletter   1
+  promotion    1
+  notification 1
+
+summary
+  classified    6
+  by rules      2 (no model call)
+  by model      4 (qwen2.5:7b)
+
+Nothing in your mailbox was changed.
+```
+
+Every email is accounted for, every decision carries its reason, and the summary shows how much of
+the result came from deterministic rules rather than the model.
 
 ## How the privacy promise is enforced
 
