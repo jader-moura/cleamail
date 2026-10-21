@@ -1,0 +1,15 @@
+version: 2
+
+updates:
+  # The workflow's actions went three majors out of date without anyone noticing, until a runner
+  # deprecation warning surfaced it. Monthly is often enough for a project this size, and grouping
+  # them means one pull request to read rather than four.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(ci)"

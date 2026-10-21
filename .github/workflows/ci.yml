@@ -11,15 +11,19 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Pinned rather than `ubuntu-latest`. That label began migrating to Ubuntu 26 in October 2026,
+    # and a runner image that changes underneath the project turns an unrelated push into a mystery
+    # failure. Dependabot moves this forward deliberately instead.
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          # One source of truth for the Node version, shared with anyone running `nvm use`.
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -27,6 +31,10 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
+      # Lint, typecheck and test each build their dependencies first, through `dependsOn: ["^build"]`
+      # in turbo.json. Type-aware linting resolves workspace imports to each package's `dist`, so on
+      # a clean checkout it has nothing to resolve until those are built. This step failed the first
+      # time CI ever ran, for exactly that reason.
       - name: Lint
         run: pnpm lint
 
