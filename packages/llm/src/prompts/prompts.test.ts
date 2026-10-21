@@ -167,6 +167,20 @@ describe("classifyPromptV1.render", () => {
     expect(rendered).toContain('the user says this is "newsletter"');
   });
 
+  it("omits the provider label line when there are none", () => {
+    const rendered = classifyPromptV1.render({ email: email({ providerLabels: [] }) });
+
+    expect(rendered).not.toContain("Provider labels:");
+    expect(rendered).toContain("Recipient count: 1");
+  });
+
+  it("says so rather than inventing a recipient when the list is empty", () => {
+    const rendered = classifyPromptV1.render({ email: email({ to: [] }) });
+
+    expect(rendered).toContain("To: (not shown)");
+    expect(rendered).toContain("Recipient count: 0");
+  });
+
   it("bounds the prompt no matter how long the body is", () => {
     const rendered = classifyPromptV1.render({ email: email({ bodyText: "x".repeat(50_000) }) });
 

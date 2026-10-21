@@ -68,6 +68,42 @@ describe("hasModel", () => {
     expect(hasModel(installed, "qwen3")).toBe(false);
     expect(hasModel([], "qwen2.5:7b")).toBe(false);
   });
+
+  it("handles an installed name that carries no tag either", () => {
+    expect(hasModel(["qwen2.5"], "qwen2.5")).toBe(true);
+    expect(hasModel(["qwen2.5"], "qwen2.5:latest")).toBe(true);
+    expect(hasModel(["qwen2.5"], "qwen2.5:7b")).toBe(false);
+  });
+
+  it("reports a model list it cannot read rather than pretending Ollama is empty", async () => {
+    const result = await checkOllama({
+      fetch: () =>
+        Promise.resolve(
+          new Response(JSON.stringify({ models: "not an array" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        ),
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.error.code).toBe("provider_unavailable");
+    expect(result.error.message).toContain("cannot read");
+  });
+
+  it("reports a reply that is not JSON at all", async () => {
+    const result = await checkOllama({
+      fetch: () => Promise.resolve(new Response("<html>nope</html>", { status: 200 })),
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.error.code).toBe("invalid_model_output");
+    expect(result.error.message).toContain("not JSON");
+  });
 });
 
 describe("the loopback check", () => {

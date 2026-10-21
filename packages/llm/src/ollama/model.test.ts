@@ -215,6 +215,20 @@ describe("when Ollama is unhappy", () => {
     expect(result.error.code).toBe(code);
   });
 
+  it("passes on what Ollama said, bounded, so a real fault is diagnosable", async () => {
+    const { model } = modelWith([
+      { kind: "status", status: 500, body: "runner process has terminated" },
+    ]);
+
+    const result = await model.complete({ email: email() });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.error.message).toContain("answered with 500");
+    expect(result.error.message).toContain("runner process has terminated");
+  });
+
   it("allows enough time for a cold model load", () => {
     // Measured at 58 seconds for a first call against an 8B model, about 1 second warm.
     expect(OLLAMA_REQUEST_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
