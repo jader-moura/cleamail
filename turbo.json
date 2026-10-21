@@ -4,7 +4,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      // The tsbuildinfo is part of the build product, not a side effect.
+      //
+      // `incremental` is on, so tsc reads a tsbuildinfo and emits nothing when it believes the
+      // output is current. With only `dist/**` cached, deleting `dist` by hand left the tsbuildinfo
+      // behind, tsc then emitted nothing, and turbo cached that as a success with no outputs. Every
+      // later run replayed the empty entry, so `dist` never came back and every dependent build
+      // failed on a missing `@cleamail/core`. Caching both together keeps them agreeing.
+      "outputs": ["dist/**", "*.tsbuildinfo"]
     },
     "typecheck": {
       "dependsOn": ["^build"]

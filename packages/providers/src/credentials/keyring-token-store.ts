@@ -6,7 +6,6 @@ import {
   type Result,
   type TokenStore,
 } from "@cleamail/core";
-import { Entry } from "@napi-rs/keyring";
 import { parseToken, serializeToken } from "./token-codec.js";
 
 export const KEYRING_SERVICE = "cleamail";
@@ -20,7 +19,9 @@ export interface KeyringEntry {
 
 export type KeyringEntryFactory = (service: string, account: string) => KeyringEntry;
 
-const systemKeyring: KeyringEntryFactory = (service, account) => new Entry(service, account);
+// Imported lazily, so loading this module does not require a keychain to exist. See
+// `keyring-entry.ts` for why that matters.
+import { systemKeyring } from "./keyring-entry.js";
 
 /**
  * Credentials in the OS keychain: Keychain on macOS, Credential Manager on Windows, the Secret

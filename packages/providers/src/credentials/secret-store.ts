@@ -1,7 +1,7 @@
 import { failure, ok, type Result } from "@cleamail/core";
-import { Entry } from "@napi-rs/keyring";
 import { z } from "zod";
 import type { ClientCredentials } from "../gmail/oauth.js";
+import { systemKeyring } from "./keyring-entry.js";
 import { KEYRING_SERVICE, type KeyringEntryFactory } from "./keyring-token-store.js";
 
 /** Somewhere to keep a secret that is not an OAuth token, such as the OAuth client credentials. */
@@ -10,8 +10,6 @@ export interface SecretStore {
   set(key: string, value: string): Promise<Result<void>>;
   delete(key: string): Promise<Result<void>>;
 }
-
-const systemKeyring: KeyringEntryFactory = (service, account) => new Entry(service, account);
 
 /** Keychain-backed secrets, so nothing sensitive is ever written to a file cleamail owns. */
 export class KeyringSecretStore implements SecretStore {
