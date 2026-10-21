@@ -66,7 +66,9 @@ function harness(options: {
 
 describe("parseEvalArgs", () => {
   it("defaults to the whole set with no gate", () => {
-    expect(parseEvalArgs([])).toEqual(ok({ smoke: false, gate: false, help: false }));
+    expect(parseEvalArgs([])).toEqual(
+      ok({ smoke: false, gate: false, help: false, labelOnly: false }),
+    );
   });
 
   it("reads the flags", () => {
@@ -87,6 +89,7 @@ describe("parseEvalArgs", () => {
       smoke: true,
       gate: true,
       help: false,
+      labelOnly: false,
       tag: "injection",
       limit: 5,
       model: "llama3.2:3b",
@@ -219,6 +222,18 @@ describe("evalCommand", () => {
     expect(await ungated.run([])).toBe(EXIT.ok);
     expect(await gated.run(["--gate"])).toBe(EXIT.gate);
     expect(gated.err.join("\n")).toContain("over the target");
+  });
+
+  it("measures the cautious mode, where nothing is ever removed from an inbox", async () => {
+    const cases = [evalCase("a"), evalCase("b")];
+    const classifier = new ScriptedClassifier({}, "promotion");
+
+    const archiving = harness({ cases, classifier });
+    const labelOnly = harness({ cases, classifier });
+
+    expect(await archiving.run(["--gate"])).toBe(EXIT.gate);
+    expect(await labelOnly.run(["--gate", "--label-only"])).toBe(EXIT.ok);
+    expect(labelOnly.out.join(" ")).toContain("nothing is ever removed");
   });
 
   it("passes the gate when nothing dangerous happened", async () => {

@@ -13,13 +13,16 @@ export type {
   MailAccount,
   MailProvider,
   OAuthToken,
+  PolicySettings,
   Result,
   RuleContext,
   TokenStore,
 } from "@cleamail/core";
 
-/** The one value re-export: the fixed category order, which the report prints in. */
-export { CATEGORIES } from "@cleamail/core";
+export type { Action, Decision } from "@cleamail/core";
+
+/** The fixed category order the report prints in, and the engine that decides what happens. */
+export { CATEGORIES, decide, removesFromInbox } from "@cleamail/core";
 
 export type { Store } from "@cleamail/store";
 

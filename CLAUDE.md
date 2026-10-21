@@ -205,8 +205,13 @@ Before saying a task is done: run `pnpm lint && pnpm typecheck && pnpm test`. If
 - Desktop app (Tauri or Electron) wrapping the same server and dashboard: double-click installer, tray icon, runs on startup, native notifications ("3 emails need you, 41 cleaned").
 - Ollama setup guided from inside the app, so non-technical users never open a terminal.
 
-Current phase: **v0.1, 2. Classify** - specs 001 to 010 are done, which closes the phase. The
-Foundations gate also wants one run against a real mailbox, which needs a Google OAuth client.
+Current phase: **v0.1, 3. Act safely** - specs 001 to 011 are done. The Foundations gate also wants
+one run against a real mailbox, which needs a Google OAuth client.
+
+The policy engine lives in `packages/core/src/policy`. It is the only place that decides what
+happens to an email, it is pure, and it plans actions without applying any of them. Two properties
+it holds and tests assert: it can never produce a `trash` action, and its safety overrides can only
+remove actions, never add one.
 
 `pnpm eval` measures the pipeline against 300 synthetic emails. Two things it has already shown,
 worth knowing before touching the prompt or the model:

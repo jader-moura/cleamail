@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Category } from "@cleamail/core";
+import { DEFAULT_POLICY_SETTINGS, type Category } from "@cleamail/core";
 import { computeMetrics } from "./metrics.js";
 import { DANGEROUS_TARGET, formatEvalReport } from "./report.js";
 import type { GradedCase } from "./grade.js";
@@ -37,6 +37,7 @@ function run(cases: readonly GradedCase[]): EvalRun {
     model: "qwen2.5:7b",
     startedAt: new Date("2026-03-10T12:00:00.000Z"),
     threshold: 0.6,
+    settings: DEFAULT_POLICY_SETTINGS,
     graded: cases,
     metrics: computeMetrics(cases),
   };

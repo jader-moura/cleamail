@@ -32,23 +32,27 @@ Gate: a dry-run report worth trusting. Code complete, and now measurable: `pnpm 
 accuracy, per-category precision and recall, and the dangerous-miss rate against 300 synthetic
 emails.
 
-Carried into phase 3 from SPEC-010: the eval runner decides whether a miss would have been acted on
-by reading `CLEANABLE_CATEGORIES` and the review flag, which is the documented policy default rather
-than the policy itself. SPEC-011 should replace that with a call into the real engine, so the two
-can never disagree about what would have happened to an email.
+Settled by SPEC-011: the eval runner used to decide whether a miss would have been acted on by
+reading `CLEANABLE_CATEGORIES` and the review flag, which was the documented policy default standing
+in for the policy itself. It now asks the engine, so the safety metric and the product cannot
+disagree about what would have happened to an email.
 
 ## v0.1 - 3. Act safely
 
-| ID  | Spec                                              | Status |
-| --- | ------------------------------------------------- | ------ |
-| 011 | Policy engine (deterministic, near 100% coverage) | next   |
-| 012 | Actions, audit log, undo                          | todo   |
-| 013 | Fastify server on 127.0.0.1 with local API        | todo   |
-| 014 | React dashboard: first-run dry-run preview        | todo   |
-| 015 | Background scheduler                              | todo   |
-| 016 | Opt-in trash rule and settings                    | todo   |
+| ID  | Spec                                       | Status |
+| --- | ------------------------------------------ | ------ |
+| 011 | [Policy engine](011-policy-engine.md)      | done   |
+| 012 | Actions, audit log, undo                   | next   |
+| 013 | Fastify server on 127.0.0.1 with local API | todo   |
+| 014 | React dashboard: first-run dry-run preview | todo   |
+| 015 | Background scheduler                       | todo   |
+| 016 | Opt-in trash rule and settings             | todo   |
 
 Gate: two weeks on a real inbox, nothing important lost.
+
+Carried into SPEC-012 from SPEC-011: the engine plans actions and never applies one, including the
+ones that would change nothing. The executor is what skips a no-op, records what actually changed,
+and checks `canModify` before trying.
 
 Carried into this phase from SPEC-008: a mailbox connected with `cleamail init --read-only` holds a
 `gmail.readonly` token, so Google refuses any change. Every spec here that applies an action must

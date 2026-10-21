@@ -1,8 +1,10 @@
-import { emailId } from "@cleamail/core";
+import { PolicySettingsSchema, emailId } from "@cleamail/core";
 import { describe, expect, it } from "vitest";
-import type { Category, ClassificationOutcome, Email } from "./ports.js";
+import type { Category, ClassificationOutcome, Email, PolicySettings } from "./ports.js";
 import { categoryCounts, formatReport, pair, plain } from "./report.js";
 import { anEmail } from "./test/harness.js";
+
+const NOW = new Date("2026-03-10T12:00:00.000Z");
 
 function outcome(
   id: string,
@@ -33,6 +35,7 @@ function report(pairs: readonly (readonly [Email, ClassificationOutcome])[]): st
     emails: pairs.map(([email]) => email),
     outcomes: pairs.map(([, result]) => result),
     model: "test-model",
+    now: NOW,
   }).join("\n");
 }
 
@@ -67,6 +70,7 @@ describe("pair", () => {
       emails: [anEmail({ id: emailId("a") })],
       outcomes: [outcome("a", "fyi"), outcome("ghost", "fyi")],
       model: "test-model",
+      now: NOW,
     });
 
     expect(paired).toHaveLength(1);
@@ -84,6 +88,7 @@ describe("categoryCounts", () => {
       ],
       outcomes: [outcome("a", "promotion"), outcome("b", "important"), outcome("c", "promotion")],
       model: "test-model",
+      now: NOW,
     });
 
     expect([...categoryCounts(paired)]).toStrictEqual([
@@ -234,6 +239,7 @@ describe("the redacted report", () => {
       emails: pairs.map(([email]) => email),
       outcomes: pairs.map(([, result]) => result),
       model: "test-model",
+      now: NOW,
       redact: true,
     }).join("\n");
   }
@@ -348,5 +354,62 @@ describe("the full report, for contrast", () => {
 
     expect(output).toContain("Mortgage payment received");
     expect(output).toContain("receipts@your-bank.example");
+  });
+});
+
+describe("what the report says would happen", () => {
+  function withSettings(
+    pairs: readonly (readonly [Email, ClassificationOutcome])[],
+    settings: PolicySettings,
+  ): string {
+    return formatReport({
+      emails: pairs.map(([email]) => email),
+      outcomes: pairs.map(([, result]) => result),
+      model: "test-model",
+      now: NOW,
+      settings,
+    }).join("\n");
+  }
+
+  const promotion = [anEmail({ id: emailId("a") }), outcome("a", "promotion")] as const;
+  const important = [anEmail({ id: emailId("b") }), outcome("b", "important")] as const;
+  const unsure = [
+    anEmail({ id: emailId("c") }),
+    outcome("c", "newsletter", { reviewReason: "low_confidence" }),
+  ] as const;
+
+  it("counts every action the engine planned", () => {
+    const output = report([promotion, important, unsure]);
+
+    expect(output).toContain("would do");
+    expect(output).toMatch(/label cleamail\/Cleaned\s+1/);
+    expect(output).toMatch(/archive\s+1/);
+    expect(output).toMatch(/star\s+1/);
+    expect(output).toMatch(/label cleamail\/Review\s+1/);
+  });
+
+  it("accounts for the emails it would leave alone", () => {
+    const output = report([[anEmail({ id: emailId("a") }), outcome("a", "fyi")]]);
+
+    expect(output).toMatch(/leave alone\s+1/);
+  });
+
+  it("moves a promotion out of 'would be cleaned' when archiving is off", () => {
+    const output = withSettings([promotion], PolicySettingsSchema.parse({ archiveCleaned: false }));
+
+    // An empty section is not printed at all, so its absence is the assertion.
+    expect(output).not.toContain("would be cleaned");
+    expect(output).toContain("kept as is (1)");
+    expect(output).not.toMatch(/archive\s+1/);
+  });
+
+  it("follows the engine for an allowlisted sender rather than the category", () => {
+    const [email] = promotion;
+    const settings = PolicySettingsSchema.parse({ allowlist: [email.from.address] });
+    const output = withSettings([promotion], settings);
+
+    expect(output).not.toContain("would be cleaned");
+    expect(output).toContain("kept as is (1)");
+    expect(output).toMatch(/leave alone\s+1/);
   });
 });

@@ -18,4 +18,6 @@ export * from "./ports/token-store.js";
 
 export * from "./pipeline/classify.js";
 
+export * from "./policy/index.js";
+
 export * from "./rules/index.js";

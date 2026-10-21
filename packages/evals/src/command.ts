@@ -1,4 +1,10 @@
-import { failure, ok, type EmailClassifier, type Result } from "@cleamail/core";
+import {
+  PolicySettingsSchema,
+  failure,
+  ok,
+  type EmailClassifier,
+  type Result,
+} from "@cleamail/core";
 import { DEFAULT_CLASSIFIER_MODEL, createOllamaClassifier } from "@cleamail/llm";
 import type { EvalCase } from "./case.js";
 import { loadDataset, selectCases } from "./dataset.js";
@@ -18,6 +24,8 @@ export type EvalArgs = {
   /** Turns the dangerous miss target into a non-zero exit. */
   readonly gate: boolean;
   readonly help: boolean;
+  /** Measure the cautious mode: label everything, move nothing. */
+  readonly labelOnly: boolean;
   readonly limit?: number;
   readonly tag?: string;
   readonly model?: string;
@@ -32,6 +40,7 @@ const USAGE = [
   "  --limit <n>         stop after n cases",
   "  --model <name>      the Ollama model to classify with",
   "  --threshold <0..1>  confidence below which an email goes to review",
+  "  --label-only        label the cleanable categories without archiving them",
   "  --gate              exit non-zero when the dangerous miss rate is over the target",
   "  --help              this text",
   "",
@@ -41,6 +50,7 @@ const USAGE = [
 export function parseEvalArgs(argv: readonly string[]): Result<EvalArgs> {
   let smoke = false;
   let gate = false;
+  let labelOnly = false;
   let help = false;
   let limit: number | undefined;
   let tag: string | undefined;
@@ -62,6 +72,9 @@ export function parseEvalArgs(argv: readonly string[]): Result<EvalArgs> {
         break;
       case "--gate":
         gate = true;
+        break;
+      case "--label-only":
+        labelOnly = true;
         break;
       case "--help":
       case "-h":
@@ -104,6 +117,7 @@ export function parseEvalArgs(argv: readonly string[]): Result<EvalArgs> {
     smoke,
     gate,
     help,
+    labelOnly,
     ...(limit === undefined ? {} : { limit }),
     ...(tag === undefined ? {} : { tag }),
     ...(model === undefined ? {} : { model }),
@@ -182,6 +196,9 @@ export async function evalCommand(deps: EvalCommandDeps): Promise<number> {
     classifier: classifier.value,
     now: deps.now(),
     ...(args.value.threshold === undefined ? {} : { confidenceThreshold: args.value.threshold }),
+    ...(args.value.labelOnly
+      ? { settings: PolicySettingsSchema.parse({ archiveCleaned: false }) }
+      : {}),
     onProgress: (done, total) => {
       deps.progress?.(`  ${String(done)}/${String(total)}`);
     },

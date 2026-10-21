@@ -152,6 +152,9 @@ export async function runCommand(deps: CliDeps, options: RunOptions): Promise<nu
     emails: stored.value,
     outcomes: outcomes.value,
     model: deps.classifierModel,
+    // The settings are the defaults until SPEC-016 stores them, and the engine is asked rather
+    // than assumed, so "would do" is the plan that would really be applied.
+    now,
     redact: options.redact === true,
   })) {
     deps.out(line);

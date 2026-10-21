@@ -30,6 +30,9 @@ export function formatEvalReport(run: EvalRun, options: ReportOptions = {}): rea
     `  model       ${run.model}`,
     `  cases       ${String(metrics.total)} from ${String(metrics.scenarios)} scenario(s)`,
     `  threshold   ${run.threshold.toFixed(2)}`,
+    // Without this line the safety number is unreadable: label-only mode never removes anything
+    // from an inbox, so it scores a perfect zero for free.
+    `  archiving   ${run.settings.archiveCleaned ? "on" : "off, so nothing is ever removed"}`,
     "",
     "Safety",
     "",
