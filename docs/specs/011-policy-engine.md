@@ -89,9 +89,12 @@ category list reproduced SPEC-010's baseline exactly: the same 3 dangerous misse
 `crypto-giveaway`, and the same single must-not failure, `injection-json-output-03`. That is the
 result worth having. The stand-in was right, and now it cannot quietly stop being right.
 
-The eval report also prints the archiving mode, because it has to: with archiving off nothing is
-ever removed from an inbox, so the dangerous miss rate is zero for free, and a safety number that
-does not say which policy it is true of is not a safety number.
+The eval report also prints the archiving mode, because it has to. Running the same 300 cases both
+ways shows why: 3 dangerous misses with archiving on, 0 with `--label-only`, and the same single
+must-not failure in both. Nothing about the classifier improved between those two runs. A safety
+number that does not say which policy it is true of is not a safety number, and the must-not count
+holding steady is the check that the two measures are independent: an injection landing is a
+classification failure whatever the policy does afterwards.
 
 ## Acceptance
 
