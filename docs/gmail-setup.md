@@ -17,8 +17,14 @@ You only do this once.
 
 1. Go to **APIs and services > OAuth consent screen**.
 2. Choose **External**, and fill in an app name and your own email address.
-3. On the scopes step, add the scope you want cleamail to have. Add one, or both if you plan to try
-   read-only first and allow changes later:
+3. On the scopes step, add the scope you want cleamail to have. These are identifiers, not links:
+   they are shaped like URLs, but there is no page to open. Paste the text into the scope dialog,
+   usually into its "Manually add scopes" box, then add it to the table and save.
+
+   Gmail scopes only appear in the picker once the Gmail API is enabled for the project, so do step
+   1 first.
+
+   Add one, or both if you plan to try read-only first and allow changes later:
 
    ```
    https://www.googleapis.com/auth/gmail.readonly
@@ -34,6 +40,17 @@ You only do this once.
 
 4. On the test users step, add your own Gmail address. While the app is in testing, only the
    addresses you list here can authorize it, which is exactly what you want.
+
+   Google classes both Gmail scopes above as **restricted**, which for a published app would mean an
+   annual security assessment. That does not apply here: the app stays in testing, with you as its
+   only test user, and it is your own project talking to your own mailbox.
+
+If you cannot find the scopes step at all, the console has moved it more than once. Look for **OAuth
+consent screen > Scopes**, or **Google Auth Platform > Data access** in newer layouts. It is also
+worth simply trying `cleamail init --read-only` first: the scope that decides what the authorization
+grants is the one cleamail requests, which is sent at sign-in, so in testing mode the consent screen
+often appears whether or not the scope is listed in the console. If Google refuses, come back and
+add it here.
 
 ## 3. Create the client id
 
