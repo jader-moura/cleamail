@@ -1,6 +1,7 @@
 import {
   CATEGORIES,
   decide,
+  explainDecision,
   removesFromInbox,
   type Action,
   type Category,
@@ -250,20 +251,21 @@ function section(heading: string, body: readonly string[]): readonly string[] {
 
 /** One email per entry, with the reason, because this is the list a user checks for mistakes. */
 function detailed(pairings: readonly Pairing[]): readonly string[] {
-  return pairings.flatMap(({ email, outcome }) => {
+  return pairings.flatMap(({ email, outcome, decision }) => {
     const category = outcome.classification?.category ?? "unclassified";
-    const reason = outcome.classification?.reason;
 
     return [
       `  ${category.padEnd(13)}${plain(email.subject)}`,
       `  ${" ".repeat(13)}${senderOf(email)}`,
-      ...(reason === undefined ? [] : [`  ${" ".repeat(13)}${plain(reason, 70)}`]),
+      // The engine's sentence rather than the classification's own, so an email the model could not
+      // classify says why in cleamail's words instead of leaving the row unexplained.
+      `  ${" ".repeat(13)}${plain(explainDecision(decision), 70)}`,
     ];
   });
 }
 
 function reviewLines(pairings: readonly Pairing[]): readonly string[] {
-  return pairings.flatMap(({ email, outcome }) => {
+  return pairings.flatMap(({ email, outcome, decision }) => {
     const why = REVIEW_LABELS[outcome.reviewReason ?? ""] ?? "needs a look";
     const category = outcome.classification?.category;
     const suffix = category === undefined ? "" : ` (looked like ${category})`;
@@ -271,6 +273,12 @@ function reviewLines(pairings: readonly Pairing[]): readonly string[] {
     return [
       `  ${why.padEnd(22)}${plain(email.subject)}`,
       `  ${" ".repeat(22)}${senderOf(email)}${suffix}`,
+      // When there is no classification there is nothing else to show, so the engine's sentence
+      // goes here. The eval report has said why since SPEC-010; "model output invalid" on its own
+      // leaves a user with nothing to do about it.
+      ...(category === undefined
+        ? [`  ${" ".repeat(22)}${plain(explainDecision(decision), 70)}`]
+        : []),
     ];
   });
 }

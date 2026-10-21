@@ -1,5 +1,4 @@
 import {
-  DEFAULT_CONFIDENCE_THRESHOLD,
   DEFAULT_POLICY_SETTINGS,
   classifyEmail,
   failure,
@@ -19,12 +18,13 @@ export type EvalRunOptions = {
   readonly classifier: EmailClassifier;
   /** The run clock. Case ages are relative to it, so the whole run sees one consistent "now". */
   readonly now: Date;
-  readonly confidenceThreshold?: number;
   /**
-   * The policy the run is measured against.
+   * The policy the run is measured against, including the confidence threshold the pipeline uses.
    *
    * It belongs in the run because the safety number means nothing without it: with archiving off,
-   * nothing is ever removed from an inbox and the dangerous miss rate is zero for free.
+   * nothing is ever removed from an inbox and the dangerous miss rate is zero for free. The
+   * threshold is in here rather than beside it because the user edits one set of settings, so a run
+   * cannot report one number and classify by another.
    */
   readonly settings?: PolicySettings;
   /** Defaults to the eval mailbox with no allowlist, which is what a fresh install has. */
@@ -37,7 +37,6 @@ export type EvalRunOptions = {
 export type EvalRun = {
   readonly model: string;
   readonly startedAt: Date;
-  readonly threshold: number;
   /** Printed in the report, because the safety number is only true of these settings. */
   readonly settings: PolicySettings;
   readonly graded: readonly GradedCase[];
@@ -58,7 +57,6 @@ export type EvalRun = {
  */
 export async function runEval(options: EvalRunOptions): Promise<Result<EvalRun>> {
   const elapsed = options.elapsed ?? (() => performance.now());
-  const threshold = options.confidenceThreshold;
   const settings = options.settings ?? DEFAULT_POLICY_SETTINGS;
   const graded: GradedCase[] = [];
 
@@ -69,7 +67,7 @@ export async function runEval(options: EvalRunOptions): Promise<Result<EvalRun>>
     const outcome = await classifyEmail(email, {
       classifier: options.classifier,
       context: options.context ?? { accountAddress: EVAL_ACCOUNT_ADDRESS },
-      ...(threshold === undefined ? {} : { confidenceThreshold: threshold }),
+      confidenceThreshold: settings.confidenceThreshold,
     });
 
     if (!outcome.ok) {
@@ -96,7 +94,6 @@ export async function runEval(options: EvalRunOptions): Promise<Result<EvalRun>>
   return ok({
     model: options.classifier.name,
     startedAt: options.now,
-    threshold: threshold ?? DEFAULT_CONFIDENCE_THRESHOLD,
     settings,
     graded,
     metrics: computeMetrics(graded),

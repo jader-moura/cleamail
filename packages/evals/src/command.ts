@@ -8,7 +8,7 @@ import {
 import { DEFAULT_CLASSIFIER_MODEL, createOllamaClassifier } from "@cleamail/llm";
 import type { EvalCase } from "./case.js";
 import { loadDataset, selectCases } from "./dataset.js";
-import { DANGEROUS_TARGET, formatEvalReport } from "./report.js";
+import { formatEvalReport, meetsDangerousTarget } from "./report.js";
 import { runEval } from "./runner.js";
 
 /** Matches the CLI: 0 worked, 1 something failed, 2 the command line was wrong, 3 the gate failed. */
@@ -41,7 +41,7 @@ const USAGE = [
   "  --model <name>      the Ollama model to classify with",
   "  --threshold <0..1>  confidence below which an email goes to review",
   "  --label-only        label the cleanable categories without archiving them",
-  "  --gate              exit non-zero when the dangerous miss rate is over the target",
+  "  --gate              exit non-zero unless the dangerous miss rate is under the target",
   "  --help              this text",
   "",
   "Needs Ollama running on localhost with the model pulled. Nothing touches a mailbox.",
@@ -191,14 +191,19 @@ export async function evalCommand(deps: EvalCommandDeps): Promise<number> {
   deps.out("The first one is slow while the model loads.");
   deps.out("");
 
+  // One settings object drives both halves of the run: the threshold the pipeline classifies by and
+  // the policy the plans are judged against. Two sources would let the report print one number
+  // while the run used another.
+  const settings = PolicySettingsSchema.parse({
+    ...(args.value.threshold === undefined ? {} : { confidenceThreshold: args.value.threshold }),
+    ...(args.value.labelOnly ? { archiveCleaned: false } : {}),
+  });
+
   const run = await runEval({
     cases,
     classifier: classifier.value,
     now: deps.now(),
-    ...(args.value.threshold === undefined ? {} : { confidenceThreshold: args.value.threshold }),
-    ...(args.value.labelOnly
-      ? { settings: PolicySettingsSchema.parse({ archiveCleaned: false }) }
-      : {}),
+    settings,
     onProgress: (done, total) => {
       deps.progress?.(`  ${String(done)}/${String(total)}`);
     },
@@ -214,9 +219,9 @@ export async function evalCommand(deps: EvalCommandDeps): Promise<number> {
 
   for (const line of formatEvalReport(run.value)) deps.out(line);
 
-  if (args.value.gate && run.value.metrics.dangerousRate > DANGEROUS_TARGET) {
+  if (args.value.gate && !meetsDangerousTarget(run.value.metrics.dangerousRate)) {
     deps.err("");
-    deps.err("The dangerous miss rate is over the target.");
+    deps.err("The dangerous miss rate is not under the target.");
 
     return EXIT.gate;
   }

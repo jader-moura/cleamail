@@ -146,6 +146,31 @@ describe("formatReport", () => {
     expect(output).toContain("(looked like fyi)");
   });
 
+  it("says why an answer could not be used, in cleamail's words", () => {
+    const output = report([
+      [
+        anEmail({ id: emailId("a"), subject: "Odd" }),
+        outcome("a", undefined, {
+          reviewReason: "invalid_model_output",
+          reviewDetail: "test-model answered with reasoning and no classification.",
+        }),
+      ],
+    ]);
+
+    expect(output).toContain("answered with reasoning and no classification");
+  });
+
+  it("falls back to its own sentence when nothing said why", () => {
+    const output = report([
+      [
+        anEmail({ id: emailId("a"), subject: "Odd" }),
+        outcome("a", undefined, { reviewReason: "invalid_model_output" }),
+      ],
+    ]);
+
+    expect(output).toContain("could not be used");
+  });
+
   it("keeps a review item out of the cleanable counts", () => {
     const output = report([
       [

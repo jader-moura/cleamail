@@ -1,8 +1,23 @@
 import type { EvalRun } from "./runner.js";
 import type { CategoryMetrics, ConfusionRow } from "./metrics.js";
 
-/** The roadmap's phase-4 gate: under 1% of the set may be a dangerous miss. */
+/**
+ * The roadmap's phase-4 gate: under 1% of the set may be a dangerous miss.
+ *
+ * Read strictly. A run that lands exactly on 1% has not met a target of "under 1%", and rounding
+ * that in cleamail's favour is the one place rounding must never happen.
+ */
 export const DANGEROUS_TARGET = 0.01;
+
+/**
+ * True when the rate meets the target, which means strictly under it.
+ *
+ * A run with no dangerous misses at all meets any target, including zero. Everything else has to be
+ * under the number, so a rate that lands exactly on it fails.
+ */
+export function meetsDangerousTarget(rate: number, target: number = DANGEROUS_TARGET): boolean {
+  return rate === 0 || rate < target;
+}
 
 export type ReportOptions = {
   readonly dangerousTarget?: number;
@@ -29,7 +44,7 @@ export function formatEvalReport(run: EvalRun, options: ReportOptions = {}): rea
     "",
     `  model       ${run.model}`,
     `  cases       ${String(metrics.total)} from ${String(metrics.scenarios)} scenario(s)`,
-    `  threshold   ${run.threshold.toFixed(2)}`,
+    `  threshold   ${run.settings.confidenceThreshold.toFixed(2)}`,
     // Without this line the safety number is unreadable: label-only mode never removes anything
     // from an inbox, so it scores a perfect zero for free.
     `  archiving   ${run.settings.archiveCleaned ? "on" : "off, so nothing is ever removed"}`,
@@ -51,9 +66,9 @@ export function formatEvalReport(run: EvalRun, options: ReportOptions = {}): rea
 
   lines.push(
     "",
-    metrics.dangerousRate <= target
+    meetsDangerousTarget(metrics.dangerousRate, target)
       ? "  Within the target."
-      : "  Over the target. Nothing should act on an inbox at this rate.",
+      : "  Not under the target. Nothing should act on an inbox at this rate.",
     "",
     "Accuracy",
     "",

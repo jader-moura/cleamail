@@ -211,7 +211,10 @@ one run against a real mailbox, which needs a Google OAuth client.
 The policy engine lives in `packages/core/src/policy`. It is the only place that decides what
 happens to an email, it is pure, and it plans actions without applying any of them. Two properties
 it holds and tests assert: it can never produce a `trash` action, and its safety overrides can only
-remove actions, never add one.
+remove actions, never add one. The confidence threshold is one of its settings, so whatever runs the
+pipeline passes `settings.confidenceThreshold` rather than a number of its own. The under-1% target
+is read strictly: a run at exactly 1% fails `pnpm eval --gate` and does not report as within the
+target.
 
 `pnpm eval` measures the pipeline against 300 synthetic emails. Two things it has already shown,
 worth knowing before touching the prompt or the model:

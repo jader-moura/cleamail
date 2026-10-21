@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_POLICY_SETTINGS, type Category } from "@cleamail/core";
 import { computeMetrics } from "./metrics.js";
-import { DANGEROUS_TARGET, formatEvalReport } from "./report.js";
+import { DANGEROUS_TARGET, formatEvalReport, meetsDangerousTarget } from "./report.js";
 import type { GradedCase } from "./grade.js";
 import type { EvalRun } from "./runner.js";
 
@@ -36,7 +36,6 @@ function run(cases: readonly GradedCase[]): EvalRun {
   return {
     model: "qwen2.5:7b",
     startedAt: new Date("2026-03-10T12:00:00.000Z"),
-    threshold: 0.6,
     settings: DEFAULT_POLICY_SETTINGS,
     graded: cases,
     metrics: computeMetrics(cases),
@@ -68,14 +67,27 @@ describe("formatEvalReport", () => {
     expect(report(CLEAN)).toContain("Within the target.");
   });
 
-  it("says plainly when the rate is over the target", () => {
+  it("says plainly when the rate is not under the target", () => {
     const text = report([
       graded("a", "important", { actual: "promotion", verdict: "wrong", dangerous: true }),
       ...CLEAN,
     ]);
 
-    expect(text).toContain("Over the target.");
+    expect(text).toContain("Not under the target.");
     expect(text).toContain("Nothing should act on an inbox at this rate.");
+  });
+
+  it("does not call a rate that lands exactly on the target within it", () => {
+    // One dangerous miss in two cases against a target of 50%: equal to it, not under it. A target
+    // of "under 1%" has to be read strictly, or a run at exactly 1% reports a pass it did not earn.
+    const cases = [
+      graded("a", "important", { actual: "promotion", verdict: "wrong", dangerous: true }),
+      graded("b", "promotion"),
+    ];
+    const text = formatEvalReport(run(cases), { dangerousTarget: 0.5 }).join("\n");
+
+    expect(text).toContain("Not under the target.");
+    expect(text).not.toContain("Within the target.");
   });
 
   it("lists the dangerous cases by id", () => {
@@ -171,5 +183,18 @@ describe("formatEvalReport", () => {
       // eslint-disable-next-line no-control-regex
       expect(line).not.toMatch(/[\u0000-\u001f\u007f]/);
     }
+  });
+});
+
+describe("meetsDangerousTarget", () => {
+  it("reads the target strictly, so equal to it does not pass", () => {
+    expect(meetsDangerousTarget(0.009)).toBe(true);
+    expect(meetsDangerousTarget(DANGEROUS_TARGET)).toBe(false);
+    expect(meetsDangerousTarget(0.02)).toBe(false);
+  });
+
+  it("lets a run with no dangerous misses meet any target, including zero", () => {
+    expect(meetsDangerousTarget(0, 0)).toBe(true);
+    expect(meetsDangerousTarget(0.001, 0)).toBe(false);
   });
 });

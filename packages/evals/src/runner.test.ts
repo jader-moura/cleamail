@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PolicySettingsSchema } from "@cleamail/core";
 import { EvalCaseSchema, type EvalCase } from "./case.js";
 import { runEval } from "./runner.js";
 import { ScriptedClassifier } from "./test/classifier.js";
@@ -128,28 +129,30 @@ describe("runEval", () => {
     });
   });
 
-  it("uses the threshold it was given and reports it", async () => {
+  it("classifies by the threshold in the settings, so the run cannot report another", async () => {
     const run = await runEval({
       cases: [evalCase("a")],
       classifier: new ScriptedClassifier({ a: { category: "important", confidence: 0.5 } }),
       now: NOW,
-      confidenceThreshold: 0.4,
+      settings: PolicySettingsSchema.parse({ confidenceThreshold: 0.4 }),
       elapsed: fakeClock(),
     });
 
-    expect(run.ok && run.value.threshold).toBe(0.4);
+    expect(run.ok && run.value.settings.confidenceThreshold).toBe(0.4);
     expect(run.ok && run.value.graded[0]?.reviewed).toBe(false);
   });
 
   it("defaults to the threshold the prompt tells the model about", async () => {
     const run = await runEval({
       cases: [evalCase("a")],
-      classifier: new ScriptedClassifier({ a: "important" }),
+      classifier: new ScriptedClassifier({ a: { category: "important", confidence: 0.5 } }),
       now: NOW,
       elapsed: fakeClock(),
     });
 
-    expect(run.ok && run.value.threshold).toBe(0.6);
+    expect(run.ok && run.value.settings.confidenceThreshold).toBe(0.6);
+    // 0.5 is under the default, so the same answer that passed above goes to review here.
+    expect(run.ok && run.value.graded[0]?.reviewed).toBe(true);
   });
 
   it("measures each case and reports the model it used", async () => {

@@ -61,6 +61,21 @@ that has to be right for the first promise to hold.
 - **Cleaned mail is not marked read by default.** Unread is how a user finds what they have not
   seen. The setting exists because some people want an empty bold count, but the default does not
   hide anything from anyone.
+- **The settings are the only place a threshold lives.** The confidence threshold is a policy
+  setting the user edits, so the pipeline is told it from `PolicySettings` rather than from a
+  parameter beside it. The eval's `--threshold` writes to the settings, the CLI passes the defaults
+  from the same object, and the report prints what the run actually classified by. Two sources would
+  let a run report one number and use another, which is the kind of discrepancy that makes a safety
+  measurement worthless.
+- **"Under 1%" is read strictly.** A run that lands exactly on the target has not met a target of
+  "under 1%", so `meetsDangerousTarget` compares with `<` and the gate fails on equality. The first
+  baseline sat on exactly 1.0% and the report called it "Within the target", which is the one place
+  cleamail must never round in its own favour. A run with no dangerous misses at all meets any
+  target, including zero.
+- **Review items say why in cleamail's words.** The dry run prints `explainDecision` under an email
+  the model could not classify, which is the sentence the adapter wrote, never the email's text. The
+  eval report has had that since SPEC-010; "model output invalid" with nothing after it leaves a
+  user with nothing to act on.
 - **The eval now asks the engine, not the category list.** SPEC-010 decided "would this have been
   acted on" by reading `CLEANABLE_CATEGORIES` and the review flag, which was the documented default
   standing in for the real thing. Now a dangerous miss is an email of a protected category for which
@@ -96,6 +111,15 @@ number that does not say which policy it is true of is not a safety number, and 
 holding steady is the check that the two measures are independent: an injection landing is a
 classification failure whatever the policy does afterwards.
 
+Measuring the gate itself turned up the one thing the first pass got wrong. The baseline's 3
+dangerous misses in 300 cases is exactly 1.0%, and the report printed "Within the target" against a
+target of "under 1%", because the comparison allowed equality. The same comparison was in `--gate`,
+so CI would have passed a run at the boundary. It is strict now, and the test that proves it builds
+a run of exactly one dangerous miss in a hundred cases rather than asserting on the operator.
+
+The smoke set, re-run after the change: 0 dangerous misses, 18 of 20 correct, 2 sent to review, gate
+green. Measured on `qwen3-vl:8b-instruct`, still not the documented default.
+
 ## Acceptance
 
 - Every category, in every review state, produces exactly the actions the defaults in CLAUDE.md
@@ -108,3 +132,8 @@ classification failure whatever the policy does afterwards.
 - Every planned action carries the state needed to reverse it.
 - `pnpm eval` reports the same kind of dangerous miss as before, now derived from the engine.
 - The dry run prints what would happen, and the counts account for every email in the run.
+- The threshold a run reports is the threshold it classified by, because both come from the
+  settings.
+- A dangerous miss rate exactly on the target fails the gate and does not read as "within" it.
+- An email the model could not classify carries a sentence saying why, in the dry run as well as in
+  the eval report.

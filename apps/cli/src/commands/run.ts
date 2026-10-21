@@ -1,6 +1,6 @@
 import { classifyEmails } from "@cleamail/core";
 import type { CliDeps } from "../deps.js";
-import type { Email } from "../ports.js";
+import { DEFAULT_POLICY_SETTINGS, type Email } from "../ports.js";
 import { formatReport } from "../report.js";
 import { describeWindow, parseSince } from "../since.js";
 import { EXIT } from "../exit.js";
@@ -24,8 +24,9 @@ const MAX_PAGES = 50;
 /**
  * Fetches recent mail, classifies it, and prints the dry-run report.
  *
- * Nothing in the mailbox is touched. Actions arrive with the policy engine in SPEC-011, so for now
- * every run is a dry run whether the flag is given or not, and the report says so.
+ * Nothing in the mailbox is touched. The policy engine plans the actions and the report prints them,
+ * but applying one arrives with the executor in SPEC-012, so every run is a dry run whether the
+ * flag is given or not, and the report says so.
  */
 export async function runCommand(deps: CliDeps, options: RunOptions): Promise<number> {
   const now = deps.clock.now();
@@ -131,9 +132,14 @@ export async function runCommand(deps: CliDeps, options: RunOptions): Promise<nu
   deps.out("The first one is slow while the model loads.");
   deps.out("");
 
+  // The defaults until SPEC-016 stores them. The same object sets the threshold the pipeline
+  // classifies by and the policy the report asks about, so what the run shows is what it did.
+  const settings = DEFAULT_POLICY_SETTINGS;
+
   const outcomes = await classifyEmails(stored.value, {
     classifier: classifier.value,
     context: { accountAddress: account.address },
+    confidenceThreshold: settings.confidenceThreshold,
     onProgress: (done, total) => {
       // Overwriting one line keeps a 200-email run from scrolling the report away.
       deps.progress(`  ${String(done)}/${String(total)}`);
@@ -152,8 +158,7 @@ export async function runCommand(deps: CliDeps, options: RunOptions): Promise<nu
     emails: stored.value,
     outcomes: outcomes.value,
     model: deps.classifierModel,
-    // The settings are the defaults until SPEC-016 stores them, and the engine is asked rather
-    // than assumed, so "would do" is the plan that would really be applied.
+    settings,
     now,
     redact: options.redact === true,
   })) {

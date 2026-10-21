@@ -221,7 +221,29 @@ describe("evalCommand", () => {
 
     expect(await ungated.run([])).toBe(EXIT.ok);
     expect(await gated.run(["--gate"])).toBe(EXIT.gate);
-    expect(gated.err.join("\n")).toContain("over the target");
+    expect(gated.err.join("\n")).toContain("not under the target");
+  });
+
+  it("fails the gate at exactly the target, because the target is under one percent", async () => {
+    // One dangerous miss in a hundred cases is 1.0%, which is not under 1.0%. The old comparison
+    // let this through and printed "Within the target."
+    const cases = [
+      evalCase("missed", { expect: "important" }),
+      ...Array.from({ length: 99 }, (_unused, index) =>
+        evalCase(`promo-${String(index)}`, { expect: "promotion" }),
+      ),
+    ];
+    const cli = harness({ cases, classifier: new ScriptedClassifier({}, "promotion") });
+
+    expect(await cli.run(["--gate"])).toBe(EXIT.gate);
+    expect(cli.out.join("\n")).toContain("Not under the target.");
+  });
+
+  it("classifies by the threshold the flag asked for, and prints that one", async () => {
+    const cli = harness({ cases: [evalCase("a")] });
+
+    expect(await cli.run(["--threshold", "0.9"])).toBe(EXIT.ok);
+    expect(cli.out.join("\n")).toContain("threshold   0.90");
   });
 
   it("measures the cautious mode, where nothing is ever removed from an inbox", async () => {

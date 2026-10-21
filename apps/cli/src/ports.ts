@@ -22,7 +22,13 @@ export type {
 export type { Action, Decision } from "@cleamail/core";
 
 /** The fixed category order the report prints in, and the engine that decides what happens. */
-export { CATEGORIES, decide, removesFromInbox } from "@cleamail/core";
+export {
+  CATEGORIES,
+  DEFAULT_POLICY_SETTINGS,
+  decide,
+  explainDecision,
+  removesFromInbox,
+} from "@cleamail/core";
 
 export type { Store } from "@cleamail/store";
 
