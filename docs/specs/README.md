@@ -43,6 +43,13 @@ Gate: a dry-run report worth trusting.
 
 Gate: two weeks on a real inbox, nothing important lost.
 
+Carried into this phase from SPEC-008: a mailbox connected with `cleamail init --read-only` holds a
+`gmail.readonly` token, so Google refuses any change. Every spec here that applies an action must
+check `canModify` on the stored token first and tell the user to re-run `init` without the flag,
+rather than letting the attempt fail at the API and land in the audit log as an error. Read-only is
+a supported way to run cleamail, not just a way to try it, so "it cannot act" has to be a sentence
+the product says rather than a stack trace.
+
 ## v0.1 - 4. Learn and measure
 
 | ID  | Spec                                                  | Status |
