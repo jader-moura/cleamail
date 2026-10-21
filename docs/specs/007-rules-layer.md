@@ -27,11 +27,24 @@ the model; everything else collects hints that the classifier can use, and the m
   corrections, then Gmail's categories, then bulk headers.
 - **Only strong signals are terminal.** A terminal match skips the model, so the bar is "Google or
   the user already told us". `CATEGORY_PROMOTIONS`, `CATEGORY_SOCIAL`, an explicit allowlist or
-  blocklist entry, a past correction for that sender, a hard DMARC failure, and the bulk-mail
-  combination all qualify.
-- **`List-Unsubscribe` on its own is a hint, not a verdict.** Password resets, receipts and order
-  confirmations carry it too, and archiving those would be exactly the kind of false positive the
-  first promise forbids. It becomes terminal only together with `List-Id` or `Precedence: bulk`.
+  blocklist entry, a past correction for that sender, a hard DMARC failure and a display-name spoof
+  qualify. Gmail's categories are on that list because Google classified them with access to the
+  content; a header pattern is not, as the bulk-mail decision below records.
+- **Bulk-mail headers are a hint, not a verdict.** Password resets, receipts and order confirmations
+  carry `List-Unsubscribe` too, and archiving those would be exactly the kind of false positive the
+  first promise forbids.
+
+  This spec originally treated `List-Unsubscribe` plus `List-Id` or `Precedence: bulk` as strong
+  enough to be terminal. Measuring the pipeline in SPEC-009 disproved it: a shop receipt carrying
+  `List-Id: receipts.store.example` was classified `newsletter` with the model never consulted.
+  Transactional senders run their receipts through mailing-list infrastructure like everything else,
+  so the headers do not separate a receipt from a digest.
+
+  No rule can repair this, because `RuleInput` deliberately withholds the subject and body. The
+  headers are now hints only (`has_unsubscribe_link`, `bulk_headers`) and the model, which can read
+  the subject, decides. The cost is a model call for every bulk message; the alternative was
+  archiving receipts, which the first promise does not allow.
+
 - **`CATEGORY_UPDATES` and `CATEGORY_FORUMS` are hints, not verdicts.** Receipts, invoices and
   genuine threads live there.
 - **An allowlisted sender is classified `important`.** The user said this sender matters, so the
@@ -54,6 +67,7 @@ the model; everything else collects hints that the classifier can use, and the m
 
 - A confident rule match returns a valid `Classification` with `source: "rule"` and a `ruleId`.
 - No rule outcome changes when only the body changes.
-- Transactional mail carrying `List-Unsubscribe` is not classified as a newsletter.
+- Transactional mail carrying bulk-mail headers is not settled by a rule at all, whether it carries
+  `List-Unsubscribe` alone or together with `List-Id` and `Precedence`.
 - A spoofed display name over an allowlisted address is `suspicious`, not `important`.
 - Unit tests cover every rule, the ordering between them, and the hint collection.

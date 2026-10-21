@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emailId } from "../domain/ids.js";
 import { normalizeHeaders } from "../domain/headers.js";
+import { bulkMailRule } from "./bulk.js";
 import { classifyWithRules, evaluateRules } from "./evaluate.js";
 import { matchesListEntry } from "./matching.js";
 import type { RuleContext, RuleInput } from "./types.js";
@@ -270,8 +271,16 @@ describe("Gmail categories", () => {
 });
 
 describe("bulk mail", () => {
-  it("classifies a mailing list message as a newsletter", () => {
-    const { classification } = classifyWithRules(
+  /**
+   * These headers are a hint, never a verdict.
+   *
+   * They were terminal once. A shop receipt carrying `List-Id: receipts.store.example` was then
+   * classified `newsletter` without the model being asked, which would have archived it. A rule
+   * cannot tell a receipt from a digest without the subject, and it does not get the subject, so
+   * the decision belongs to the model.
+   */
+  it("does not settle a mailing list message on its own", () => {
+    const outcome = evaluateRules(
       input({
         headers: headers({
           "List-Unsubscribe": "<mailto:unsub@shop.example>",
@@ -281,12 +290,27 @@ describe("bulk mail", () => {
       context,
     );
 
-    expect(classification?.category).toBe("newsletter");
-    expect(classification?.ruleId).toBe("bulk_mail");
+    expect(outcome.match).toBeUndefined();
+    expect(outcome.hints.map((hint) => hint.id)).toContain("bulk_headers");
   });
 
-  it("accepts Precedence: bulk instead of a List-Id", () => {
-    const { classification } = classifyWithRules(
+  it("leaves a receipt carrying full bulk headers to the model", () => {
+    const outcome = evaluateRules(
+      input({
+        from: { address: "receipts@store.example", name: "Corner Store" },
+        headers: headers({
+          "List-Unsubscribe": "<mailto:unsub@store.example>",
+          "List-Id": "<receipts.store.example>",
+        }),
+      }),
+      context,
+    );
+
+    expect(outcome.match).toBeUndefined();
+  });
+
+  it("passes Precedence: bulk to the model as a hint too", () => {
+    const outcome = evaluateRules(
       input({
         headers: headers({
           "List-Unsubscribe": "<https://shop.example/u>",
@@ -296,7 +320,23 @@ describe("bulk mail", () => {
       context,
     );
 
-    expect(classification?.category).toBe("newsletter");
+    expect(outcome.match).toBeUndefined();
+    expect(outcome.hints.map((hint) => hint.id)).toContain("bulk_headers");
+  });
+
+  it("still describes the signal, so the policy engine can use it as a prior", () => {
+    const match = bulkMailRule.evaluate(
+      input({
+        headers: headers({
+          "List-Unsubscribe": "<mailto:unsub@shop.example>",
+          "List-Id": "<news.shop.example>",
+        }),
+      }),
+      context,
+    );
+
+    expect(match?.category).toBe("newsletter");
+    expect(match?.terminal).toBe(false);
   });
 
   it("does not touch a password reset that happens to carry an unsubscribe header", () => {

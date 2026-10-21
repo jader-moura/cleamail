@@ -80,7 +80,19 @@ export const bulkMailRule: Rule = {
       importance: 0.15,
       confidence: 0.85,
       reason: "A mailing list message with an unsubscribe link.",
-      terminal: true,
+      // Not terminal, and this is a correction.
+      //
+      // SPEC-007 made this terminal on the theory that `List-Unsubscribe` alone catches receipts but
+      // `List-Unsubscribe` plus `List-Id` means a real mailing list. Measuring it proved otherwise:
+      // a shop receipt carrying `List-Id: receipts.store.example` was classified `newsletter` with
+      // the model never consulted, which is precisely the archived-receipt false positive the first
+      // promise forbids.
+      //
+      // A rule cannot fix this, because `RuleInput` deliberately excludes the subject and body: it
+      // has no way to tell a receipt from a digest. So the headers become a strong hint and the
+      // model, which can read the subject, decides. Gmail's own categories stay terminal because
+      // Google classified those with full access to the content.
+      terminal: false,
     };
   },
 };
@@ -97,7 +109,12 @@ export function collectHints(email: RuleInput, context: RuleContext): RuleHint[]
     hints.push({ id: "has_unsubscribe_link", detail: "Has an unsubscribe link." });
   }
 
-  if (hasHeader(email.headers, "list-id")) {
+  // `Precedence` counts as well as `List-Id`, so the model sees every signal the bulk rule weighed
+  // back when it was the one deciding.
+  if (
+    hasHeader(email.headers, "list-id") ||
+    /bulk|list|junk/i.test(getHeader(email.headers, "precedence") ?? "")
+  ) {
     hints.push({ id: "bulk_headers", detail: "Sent through a mailing list." });
   }
 
