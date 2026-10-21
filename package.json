@@ -2,6 +2,10 @@
   "name": "cleamail",
   "version": "0.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jader-moura/cleamail.git"
+  },
   "description": "A local-first email agent: classifies your inbox with a local LLM, clears the noise, surfaces what matters.",
   "license": "MIT",
   "type": "module",

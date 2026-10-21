@@ -16,7 +16,16 @@ export type InitOptions = {
   readonly readOnly: boolean;
 };
 
-const SETUP_GUIDE = "https://github.com/jadermoura/cleamail/blob/main/docs/gmail-setup.md";
+/**
+ * The setup guide, as printed to the user.
+ *
+ * Split into the repository and the path because `setup-guide.test.ts` checks that the path
+ * still exists in this repo. A link printed into a terminal is the one kind of documentation
+ * nobody notices has rotted, and this one shipped with the owner name misspelled.
+ */
+export const REPOSITORY_URL = "https://github.com/jader-moura/cleamail";
+export const SETUP_GUIDE_PATH = "docs/gmail-setup.md";
+const SETUP_GUIDE = `${REPOSITORY_URL}/blob/main/${SETUP_GUIDE_PATH}`;
 
 /**
  * Connects a mailbox.
