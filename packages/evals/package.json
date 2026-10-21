@@ -1,0 +1,43 @@
+{
+  "name": "@cleamail/evals",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The eval set and the runner that measures how well cleamail classifies mail.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "datasets"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "eval": "tsc -p tsconfig.build.json && node dist/bin/eval.js",
+    "eval:smoke": "tsc -p tsconfig.build.json && node dist/bin/eval.js --smoke",
+    "generate": "tsc -p tsconfig.build.json && node dist/bin/generate.js"
+  },
+  "dependencies": {
+    "@cleamail/core": "workspace:*",
+    "@cleamail/llm": "workspace:*",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@cleamail/config": "workspace:*",
+    "@types/node": "^22.19.1",
+    "@vitest/coverage-v8": "^3.2.7",
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

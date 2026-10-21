@@ -28,7 +28,8 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 007  | Rules layer                   | done   |
 | 008  | Ollama classifier             | done   |
 | 009  | Dry-run report in the CLI     | done   |
-| 010  | Evals and eval set v1         | next   |
+| 010  | Evals and eval set v1         | done   |
+| 011  | Policy engine                 | next   |
 
 ## What a dry run looks like
 

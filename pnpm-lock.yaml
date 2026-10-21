@@ -110,6 +110,37 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
 
+  packages/evals:
+    dependencies:
+      '@cleamail/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cleamail/llm':
+        specifier: workspace:*
+        version: link:../llm
+      zod:
+        specifier: ^4.1.12
+        version: 4.6.7
+    devDependencies:
+      '@cleamail/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^22.19.1
+        version: 22.20.5
+      '@vitest/coverage-v8':
+        specifier: ^3.2.7
+        version: 3.2.7(vitest@3.2.7(@types/node@22.20.5)(tsx@4.23.15))
+      eslint:
+        specifier: ^9.39.0
+        version: 9.39.5
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
+
   packages/llm:
     dependencies:
       '@cleamail/core':

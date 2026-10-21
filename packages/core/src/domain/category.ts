@@ -23,3 +23,21 @@ export const PROTECTED_CATEGORIES: readonly Category[] = ["important", "needs_re
 export function isProtectedCategory(category: Category): boolean {
   return PROTECTED_CATEGORIES.includes(category);
 }
+
+/**
+ * Categories the policy cleans by default: labelled `cleamail/Cleaned` and archived.
+ *
+ * The complement of {@link PROTECTED_CATEGORIES} is not this set, and that gap is deliberate. `fyi`
+ * is in neither: it is not worth starring and not noise worth archiving, so it stays in the inbox
+ * with nothing done to it. SPEC-011's policy engine and the eval metrics both read this constant,
+ * which is what keeps "would this have been archived" the same question in both places.
+ */
+export const CLEANABLE_CATEGORIES: readonly Category[] = [
+  "newsletter",
+  "promotion",
+  "notification",
+];
+
+export function isCleanableCategory(category: Category): boolean {
+  return CLEANABLE_CATEGORIES.includes(category);
+}

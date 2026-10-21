@@ -26,15 +26,22 @@ which needs a Google OAuth client (see [gmail-setup.md](../gmail-setup.md)).
 | 007 | [Rules layer](007-rules-layer.md)                                                        | done   |
 | 008 | [Ollama classifier adapter, versioned prompts, Zod validation](008-ollama-classifier.md) | done   |
 | 009 | [Dry-run report in the CLI](009-dry-run-report.md)                                       | done   |
-| 010 | Evals package and eval set v1 (300 synthetic emails)                                     | next   |
+| 010 | [Evals package and eval set v1](010-evals.md)                                            | done   |
 
-Gate: a dry-run report worth trusting.
+Gate: a dry-run report worth trusting. Code complete, and now measurable: `pnpm eval` reports
+accuracy, per-category precision and recall, and the dangerous-miss rate against 300 synthetic
+emails.
+
+Carried into phase 3 from SPEC-010: the eval runner decides whether a miss would have been acted on
+by reading `CLEANABLE_CATEGORIES` and the review flag, which is the documented policy default rather
+than the policy itself. SPEC-011 should replace that with a call into the real engine, so the two
+can never disagree about what would have happened to an email.
 
 ## v0.1 - 3. Act safely
 
 | ID  | Spec                                              | Status |
 | --- | ------------------------------------------------- | ------ |
-| 011 | Policy engine (deterministic, near 100% coverage) | todo   |
+| 011 | Policy engine (deterministic, near 100% coverage) | next   |
 | 012 | Actions, audit log, undo                          | todo   |
 | 013 | Fastify server on 127.0.0.1 with local API        | todo   |
 | 014 | React dashboard: first-run dry-run preview        | todo   |

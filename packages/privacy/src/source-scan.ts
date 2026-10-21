@@ -90,8 +90,10 @@ export function findUrlMentions(root: string, options: ScanOptions = {}): UrlMen
           continue;
         }
 
-        // Template placeholders such as `https://${host}/path` are not a host.
-        if (host.includes("$") || host === "") continue;
+        // Template placeholders are not hosts. `https://${host}/path` is the JavaScript form, and
+        // `https://{domain}/path` is the one the eval scenarios use before expansion. Neither is a
+        // place anything can connect to, and the expanded dataset is data rather than source.
+        if (host === "" || /[${}]/.test(host)) continue;
 
         mentions.push({ file: relative(root, file), line: index + 1, url, host });
       }

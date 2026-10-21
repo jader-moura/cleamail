@@ -89,6 +89,21 @@ describe("findUrlMentions", () => {
     expect(findUrlMentions(root)).toStrictEqual([]);
   });
 
+  it("ignores a brace placeholder, which the eval scenarios use", () => {
+    writeFileSync(join(root, "a.ts"), 'const url = "https://{domain}/unsubscribe";\n');
+
+    expect(findUrlMentions(root)).toStrictEqual([]);
+  });
+
+  it("still flags a real host that merely sits next to a placeholder", () => {
+    writeFileSync(
+      join(root, "a.ts"),
+      'const a = "https://{domain}/x";\nconst b = "https://cdn.example.com/lib.js";\n',
+    );
+
+    expect(findUrlMentions(root).map((mention) => mention.host)).toStrictEqual(["cdn.example.com"]);
+  });
+
   it("flags an unknown host and clears a known one", () => {
     writeFileSync(
       join(root, "a.ts"),

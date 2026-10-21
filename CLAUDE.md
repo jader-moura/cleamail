@@ -205,5 +205,15 @@ Before saying a task is done: run `pnpm lint && pnpm typecheck && pnpm test`. If
 - Desktop app (Tauri or Electron) wrapping the same server and dashboard: double-click installer, tray icon, runs on startup, native notifications ("3 emails need you, 41 cleaned").
 - Ollama setup guided from inside the app, so non-technical users never open a terminal.
 
-Current phase: **v0.1, 2. Classify** - specs 001 to 008 are done. The Foundations gate also wants
-one run against a real mailbox, which needs a Google OAuth client.
+Current phase: **v0.1, 2. Classify** - specs 001 to 010 are done, which closes the phase. The
+Foundations gate also wants one run against a real mailbox, which needs a Google OAuth client.
+
+`pnpm eval` measures the pipeline against 300 synthetic emails. Two things it has already shown,
+worth knowing before touching the prompt or the model:
+
+- A model with a thinking mode cannot be used. It spends the whole reply budget on reasoning and
+  returns nothing, so every email fails validation and lands in review. Measured on `qwen3-vl:8b`.
+- The first baseline over-used `fyi` heavily (127 predictions against a support of 40), which pulls
+  notifications and newsletters out of the cleanable categories and leaves cleamail cleaning almost
+  nothing. Measured on `qwen3-vl:8b-instruct`, not the documented default, so confirm on
+  `qwen2.5:7b` before changing the prompt for it.
