@@ -9,7 +9,12 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
-    "lint": {},
+    "lint": {
+      // Type-aware linting resolves workspace imports through each package's `exports`, which point
+      // at `dist`. Without this, `pnpm lint` passes locally off a warm build and fails in CI, where
+      // lint runs before build on a clean checkout.
+      "dependsOn": ["^build"]
+    },
     "test": {
       "dependsOn": ["^build"]
     },
