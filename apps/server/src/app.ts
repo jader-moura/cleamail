@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { ALLOWED_HOSTNAMES, DEFAULT_PORT } from "./config.js";
 import { registerRoutes } from "./routes.js";
+import { registerWeb } from "./web.js";
 import type { ServerDeps } from "./deps.js";
 
 export type AppOptions = {
@@ -15,6 +16,13 @@ export type AppOptions = {
   readonly port?: number;
   /** Off by default so tests are quiet. `main.ts` turns it on. */
   readonly logRequests?: boolean;
+  /**
+   * The built dashboard to serve from the same origin.
+   *
+   * Left out, the API answers on its own and `/` says the app has not been built. That is a normal
+   * state during development and not worth failing a startup over.
+   */
+  readonly webDir?: string;
 };
 
 /**
@@ -67,6 +75,7 @@ export function createApp(deps: ServerDeps, options: AppOptions = {}): FastifyIn
   });
 
   registerRoutes(app, deps);
+  registerWeb(app, options.webDir);
 
   app.setNotFoundHandler((request, reply) => {
     void reply.code(404).send({

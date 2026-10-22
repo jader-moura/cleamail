@@ -1,6 +1,7 @@
 import type {
   ActionOutcome,
   DomainError,
+  Email,
   StoredAction,
   StoredAuditEntry,
   StoredDecision,
@@ -13,8 +14,13 @@ import type {
  * decision, not a side effect of the schema. A column added to `decisions` next month must not
  * appear in the API because nobody stopped it.
  *
- * No subject, sender or body appears in any shape here, and none may be added. The dashboard shows
- * the mail by reading it from the store on the machine it is running on; the API carries decisions.
+ * A decision shape carries no subject, sender or body. The mail itself is a separate shape with a
+ * separate route, so a view that only lists what happened cannot accidentally ship an inbox, and
+ * the one route that does serve mail is the one to look at when asking what the dashboard can see.
+ *
+ * Serving it at all is safe because loopback HTTP to the user's own browser never leaves the
+ * machine. What must never carry content is a log line, the audit log, or anything addressed
+ * outside this machine.
  */
 
 export type ApiError = {
@@ -60,6 +66,24 @@ export type ApiAuditEntry = {
   readonly details?: Readonly<Record<string, unknown>>;
 };
 
+/**
+ * One email, as little of it as a list needs.
+ *
+ * The body and the snippet are not here. A row in the dashboard shows who it is from, what it is
+ * called and when it arrived; anything more is the mail client's job, and cleamail is not one.
+ */
+export type ApiEmail = {
+  readonly id: string;
+  readonly subject: string;
+  readonly from: string;
+  readonly fromName?: string;
+  readonly receivedAt: string;
+  readonly isRead: boolean;
+  readonly isStarred: boolean;
+  readonly isInInbox: boolean;
+  readonly labels: readonly string[];
+};
+
 export type ApiStatus = {
   readonly version: string;
   readonly database: string;
@@ -67,10 +91,25 @@ export type ApiStatus = {
   readonly mailbox?: {
     readonly address: string;
     readonly kind: string;
-    readonly canModify: boolean;
+    /**
+     * Absent when cleamail could not find out, which is not the same as read-only.
+     *
+     * The dashboard offers to act on `true` and explains read-only on `false`. On neither it says
+     * what is missing instead, because "re-run init without --read-only" is the wrong advice for a
+     * keychain that has no OAuth client in it.
+     */
+    readonly canModify?: boolean;
     readonly messages: number;
     readonly lastSyncAt?: string;
   };
+};
+
+export type ApiApplyResult = {
+  readonly runId: string;
+  readonly emailsChanged: number;
+  readonly applied: number;
+  readonly skipped: number;
+  readonly failures: readonly { readonly emailId: string; readonly error: string }[];
 };
 
 export type ApiUndoResult = {
@@ -80,6 +119,20 @@ export type ApiUndoResult = {
   readonly alreadyReversed: number;
   readonly failures: readonly { readonly emailId: string; readonly error: string }[];
 };
+
+export function toApiEmail(email: Email): ApiEmail {
+  return {
+    id: email.id,
+    subject: email.subject,
+    from: email.from.address,
+    receivedAt: email.receivedAt.toISOString(),
+    isRead: email.isRead,
+    isStarred: email.isStarred,
+    isInInbox: email.isInInbox,
+    labels: email.providerLabels,
+    ...(email.from.name === undefined ? {} : { fromName: email.from.name }),
+  };
+}
 
 export function toApiAction(action: StoredAction): ApiAction {
   return {

@@ -4,6 +4,7 @@
  */
 export type {
   AccountId,
+  ApplySummary,
   ActionOutcome,
   Clock,
   DomainError,
@@ -17,6 +18,6 @@ export type {
   UndoSummary,
 } from "@cleamail/core";
 
-export { emailId, explainDecision, failure, ok, undoRun } from "@cleamail/core";
+export { applyDecisions, emailId, explainDecision, failure, ok, undoRun } from "@cleamail/core";
 
 export type { Store } from "@cleamail/store";

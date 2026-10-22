@@ -34,6 +34,9 @@ must be impossible to reach from anywhere but this machine.
 - **Every response is built from a mapper, not from a row.** The API shape is a decision, not a side
   effect of the schema, and a column added later must not appear in the API because nobody stopped
   it.
+- **A decision shape carries no mail.** The subject and the sender belong to a separate shape on a
+  separate route, added in SPEC-014 for the lists that show mail. Keeping them apart means the
+  routes that only report what happened cannot accidentally ship an inbox.
 - **Request logging holds ids and counts, never content.** The access log records method, path,
   status and duration. Query strings may carry an email id, which is allowed; nothing writes a
   subject, a sender or a reason into a log line.

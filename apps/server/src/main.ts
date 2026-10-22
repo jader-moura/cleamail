@@ -13,6 +13,7 @@ import { openStore } from "@cleamail/store";
 import { readConfig } from "./config.js";
 import type { ServerDeps } from "./deps.js";
 import { startServer } from "./start.js";
+import { resolveWebDir } from "./web.js";
 import { VERSION } from "./version.js";
 
 /**
@@ -38,6 +39,16 @@ async function main(): Promise<number> {
     clock: systemClock,
     classifierModel: process.env["CLEAMAIL_MODEL"] ?? DEFAULT_CLASSIFIER_MODEL,
     version: VERSION,
+    account: async () => {
+      const accounts = await store.accounts.list();
+      if (!accounts.ok) return accounts;
+
+      const account = accounts.value[0];
+
+      return account === undefined
+        ? failure("config_invalid", "No mailbox is connected yet. Run `cleamail init` first.")
+        : ok(account);
+    },
     connect: async () => {
       const accounts = await store.accounts.list();
       if (!accounts.ok) return accounts;
@@ -79,7 +90,13 @@ async function main(): Promise<number> {
     },
   };
 
-  const started = await startServer(deps, { port: config.value.port, logRequests: true });
+  const webDir = resolveWebDir(process.env);
+
+  const started = await startServer(deps, {
+    port: config.value.port,
+    logRequests: true,
+    ...(webDir === undefined ? {} : { webDir }),
+  });
   if (!started.ok) {
     process.stderr.write(`${started.error.message}\n`);
     store.close();

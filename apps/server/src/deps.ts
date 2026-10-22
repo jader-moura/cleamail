@@ -14,7 +14,15 @@ export type ServerDeps = {
   readonly classifierModel: string;
   readonly version: string;
   /**
-   * The connected mailbox and a provider wired to it.
+   * The connected mailbox, from the store alone.
+   *
+   * Separate from `connect` on purpose. Reading what cleamail decided needs an account id and
+   * nothing else, so the lists keep working when the OAuth client is missing from the keychain,
+   * which is what a user with a half-finished setup actually has.
+   */
+  readonly account: () => Promise<Result<MailAccount>>;
+  /**
+   * The mailbox and a provider wired to it, for the routes that change something.
    *
    * A `Result`, because "no mailbox is connected yet" is a normal state for a server that may have
    * been started before `init`: `/api/health` and `/api/status` still answer.
