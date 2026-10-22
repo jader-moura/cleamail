@@ -9,6 +9,9 @@ import * as schema from "./schema.js";
 
 export type Database = BetterSQLite3Database<typeof schema>;
 
+/** How long a write waits for another process to finish before giving up. */
+const BUSY_TIMEOUT_MS = 5000;
+
 export type OpenDatabaseOptions = {
   /** Absolute path, or `:memory:` for tests. Defaults to the per-user data directory. */
   readonly path?: string;
@@ -44,6 +47,12 @@ export function openDatabase(options: OpenDatabaseOptions = {}): DatabaseHandle 
   // off by default in SQLite, and the schema relies on them to cascade deletes.
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
+
+  // WAL still allows only one writer at a time, and without this a write that collides with the
+  // server's fails instantly with SQLITE_BUSY rather than waiting the moment it takes. A run that
+  // applied half a batch because the dashboard happened to be writing would be the worst kind of
+  // bug to reproduce.
+  sqlite.pragma(`busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
 
   const db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: migrationsFolder() });
