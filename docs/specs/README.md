@@ -55,9 +55,14 @@ for its capabilities before attempting anything, so a read-only mailbox is refus
 than failing at the API. The record is written before the mailbox is touched, which is what makes
 `cleamail undo` able to promise it can reverse everything that happened.
 
-Carried into SPEC-013 from SPEC-012: the local API serves the decisions, the audit log and the undo
-button from the same store the CLI writes to, and `run --apply` is the only path that changes a
-mailbox. Nothing in the server may plan actions of its own.
+Settled by SPEC-013: the local API serves decisions, the audit log and undo from the same store the
+CLI writes to, and it plans nothing of its own. It binds `127.0.0.1`, checks the `Host` header on
+every request, and sends no CORS header.
+
+Carried into SPEC-014 from SPEC-013: the dashboard is served from the same origin as the API, with
+every asset bundled locally, so the `Host` check and the absence of CORS keep holding. The API
+carries decisions and never email content, so a view that wants to show a subject reads it from the
+store rather than from a new field on the API.
 
 Carried into this phase from SPEC-008: a mailbox connected with `cleamail init --read-only` holds a
 `gmail.readonly` token, so Google refuses any change. Every spec here that applies an action must

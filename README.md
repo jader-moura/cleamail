@@ -31,7 +31,8 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 010  | Evals and eval set v1         | done   |
 | 011  | Policy engine                 | done   |
 | 012  | Actions, audit log, undo      | done   |
-| 013  | Local server on 127.0.0.1     | next   |
+| 013  | Local server on 127.0.0.1     | done   |
+| 014  | React dashboard               | next   |
 
 ## What a dry run looks like
 
