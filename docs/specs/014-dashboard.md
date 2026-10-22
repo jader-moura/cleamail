@@ -84,6 +84,14 @@ but said nothing about what had happened, and threw away the per-email failures 
 reports, so both now print what changed and name anything that could not be done. And the dev script
 claimed a watch mode the server does not have; the docs say what actually happens instead.
 
+Opening the thing in a real browser found what neither the unit tests nor the API tests could. A
+first run rendered as "Approving will clear 0 emails out of the inbox", with every row saying "Left
+alone", because the API built its action list from the action rows and a dry run deliberately writes
+none: the plan lives on the decision. Both sides of that were tested and both were consistent with
+each other, which is how a gap like this survives. The mapper falls back to the decision's own plan
+now, as `planned` actions with negative ids so nothing can mistake one for a row undo could act on.
+The same look also caught "leave 1 email where they are".
+
 ## Acceptance
 
 - `GET /api/emails` returns subject, sender, date and state for the ids asked for, and nothing else.

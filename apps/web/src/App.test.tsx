@@ -22,9 +22,24 @@ describe("the dashboard", () => {
   });
 
   it("shows a preview with its counts, and nothing applied yet", async () => {
+    // A preview's actions come back as `planned` with negative ids, because nothing has been tried.
     fakeApi({
       decisions: [
-        aDecision({ id: 1, dryRun: true, runId: "preview-1" }),
+        aDecision({
+          id: 1,
+          dryRun: true,
+          runId: "preview-1",
+          actions: [
+            { id: -1, type: "label", outcome: "planned", at: NOW.toISOString(), reversible: false },
+            {
+              id: -2,
+              type: "archive",
+              outcome: "planned",
+              at: NOW.toISOString(),
+              reversible: false,
+            },
+          ],
+        }),
         aDecision({
           id: 2,
           dryRun: true,
@@ -33,7 +48,7 @@ describe("the dashboard", () => {
           category: "important",
           explanation: "It is a payment confirmation.",
           actions: [
-            { id: 3, type: "star", outcome: "applied", at: NOW.toISOString(), reversible: true },
+            { id: -1, type: "star", outcome: "planned", at: NOW.toISOString(), reversible: false },
           ],
         }),
       ],
@@ -44,9 +59,13 @@ describe("the dashboard", () => {
 
     expect(await screen.findByText(/went through 2 emails/)).toBeInTheDocument();
     expect(screen.getByText(/clear 1 email out of the inbox/)).toBeInTheDocument();
+    // Seen in a browser: "leave 1 email where they are" reads like a typo, because it is one.
+    expect(screen.getByText(/leave 1 email where it is/)).toBeInTheDocument();
     // The mail arrives in a second request, so the row waits for it rather than the panel.
     expect(await screen.findByText("Half price everything")).toBeInTheDocument();
     expect(screen.getByText("It offers a discount.")).toBeInTheDocument();
+    // What it would do to this one, before it has done it.
+    expect(screen.getByText("label it, archive it")).toBeInTheDocument();
   });
 
   it("applies the run the user was shown when they approve", async () => {

@@ -1,4 +1,5 @@
 import type {
+  Action,
   ActionOutcome,
   DomainError,
   Email,
@@ -164,7 +165,25 @@ export function toApiDecision(stored: StoredDecision, explanation: string): ApiD
         }),
     ...(decision.reviewReason === undefined ? {} : { reviewReason: decision.reviewReason }),
     ...(stored.appliedAt === undefined ? {} : { appliedAt: stored.appliedAt.toISOString() }),
-    actions: stored.actions.map((action) => toApiAction(action)),
+    // A preview has no action rows, because nothing was done. Its plan is on the decision itself,
+    // and it is the whole point of a preview: without this the dashboard shows a first run as
+    // "nothing would happen", which is the one thing it must never say wrongly.
+    actions:
+      stored.actions.length === 0
+        ? decision.actions.map((action, index) => plannedAction(action, index, decision.decidedAt))
+        : stored.actions.map((action) => toApiAction(action)),
+  };
+}
+
+/** One action the engine planned, which nothing has tried yet. */
+function plannedAction(action: Action, index: number, at: Date): ApiAction {
+  return {
+    // Negative, so it cannot be mistaken for a row id the undo path could act on.
+    id: -(index + 1),
+    type: action.type,
+    outcome: "planned",
+    at: at.toISOString(),
+    reversible: false,
   };
 }
 

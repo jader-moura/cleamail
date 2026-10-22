@@ -59,7 +59,8 @@ export function Preview({
       <p className="text-sm text-slate-700">
         cleamail went through {plural(decisions.length, "email", "emails")} and nothing has been
         changed yet. Approving will clear {plural(removing.length, "email", "emails")} out of the
-        inbox and leave {plural(keeping, "email", "emails")} where they are.
+        inbox and leave {plural(keeping, "email", "emails")}{" "}
+        {keeping === 1 ? "where it is" : "where they are"}.
       </p>
       {canAct ? null : (
         <p className="mt-2 text-sm text-amber-800">

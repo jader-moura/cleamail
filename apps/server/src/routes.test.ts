@@ -110,6 +110,48 @@ describe("the local API", () => {
       expect(body.decisions[0]?.actions).toHaveLength(2);
     });
 
+    it("shows a preview's plan, which has no rows because nothing was done", async () => {
+      // Caught in a browser: a first run rendered as "nothing would happen" and every row said
+      // "left alone", because the API was reading action rows a dry run deliberately never writes.
+      await harness.previewRun("preview-1", [anEmail()]);
+
+      const response = await harness.app.inject({
+        method: "GET",
+        url: "/api/decisions?runId=preview-1",
+        headers: LOCAL_HEADERS,
+      });
+
+      const body = response.json<{
+        decisions: { dryRun: boolean; actions: { type: string; outcome: string }[] }[];
+      }>();
+      const decision = body.decisions[0];
+
+      expect(decision?.dryRun).toBe(true);
+      expect(decision?.actions.map((action) => action.type).sort()).toStrictEqual([
+        "archive",
+        "label",
+      ]);
+      expect(decision?.actions.every((action) => action.outcome === "planned")).toBe(true);
+    });
+
+    it("offers nothing to undo in a preview's plan", async () => {
+      await harness.previewRun("preview-1", [anEmail()]);
+
+      const response = await harness.app.inject({
+        method: "GET",
+        url: "/api/decisions?runId=preview-1",
+        headers: LOCAL_HEADERS,
+      });
+
+      const actions =
+        response.json<{ decisions: { actions: { id: number; reversible: boolean }[] }[] }>()
+          .decisions[0]?.actions ?? [];
+
+      expect(actions.every((action) => !action.reversible)).toBe(true);
+      // Negative ids: nothing that reaches the undo path can be confused for one of these.
+      expect(actions.every((action) => action.id < 0)).toBe(true);
+    });
+
     it("says which actions an undo would send", async () => {
       await harness.applyRun("run-1", [anEmail()]);
 
