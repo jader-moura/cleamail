@@ -74,6 +74,8 @@ export type HarnessOptions = {
   readonly env?: Record<string, string | undefined>;
   readonly code?: string;
   readonly token?: OAuthToken;
+  /** False stands in for a mailbox connected with `init --read-only`. */
+  readonly canModify?: boolean;
 };
 
 /** A whole CLI, wired to the in-memory store, the fake provider and scripted answers. */
@@ -84,6 +86,7 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
   const provider = new FakeMailProvider({
     address: ACCOUNT.address,
     emails: options.emails ?? [],
+    canModify: options.canModify ?? true,
   });
 
   const stdout: string[] = [];

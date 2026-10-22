@@ -37,7 +37,7 @@ describe("runCli", () => {
   });
 
   it("says plainly when a command belongs to a later phase", async () => {
-    for (const command of ["start", "undo", "eval"]) {
+    for (const command of ["start", "eval"]) {
       const fresh = await createHarness();
 
       try {

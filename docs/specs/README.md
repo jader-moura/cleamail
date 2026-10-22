@@ -39,20 +39,25 @@ disagree about what would have happened to an email.
 
 ## v0.1 - 3. Act safely
 
-| ID  | Spec                                       | Status |
-| --- | ------------------------------------------ | ------ |
-| 011 | [Policy engine](011-policy-engine.md)      | done   |
-| 012 | Actions, audit log, undo                   | next   |
-| 013 | Fastify server on 127.0.0.1 with local API | todo   |
-| 014 | React dashboard: first-run dry-run preview | todo   |
-| 015 | Background scheduler                       | todo   |
-| 016 | Opt-in trash rule and settings             | todo   |
+| ID  | Spec                                                  | Status |
+| --- | ----------------------------------------------------- | ------ |
+| 011 | [Policy engine](011-policy-engine.md)                 | done   |
+| 012 | [Actions, audit log, undo](012-actions-audit-undo.md) | done   |
+| 013 | Fastify server on 127.0.0.1 with local API            | next   |
+| 014 | React dashboard: first-run dry-run preview            | todo   |
+| 015 | Background scheduler                                  | todo   |
+| 016 | Opt-in trash rule and settings                        | todo   |
 
 Gate: two weeks on a real inbox, nothing important lost.
 
-Carried into SPEC-012 from SPEC-011: the engine plans actions and never applies one, including the
-ones that would change nothing. The executor is what skips a no-op, records what actually changed,
-and checks `canModify` before trying.
+Settled by SPEC-012: the executor skips no-ops, records what actually changed, and asks the provider
+for its capabilities before attempting anything, so a read-only mailbox is refused in words rather
+than failing at the API. The record is written before the mailbox is touched, which is what makes
+`cleamail undo` able to promise it can reverse everything that happened.
+
+Carried into SPEC-013 from SPEC-012: the local API serves the decisions, the audit log and the undo
+button from the same store the CLI writes to, and `run --apply` is the only path that changes a
+mailbox. Nothing in the server may plan actions of its own.
 
 Carried into this phase from SPEC-008: a mailbox connected with `cleamail init --read-only` holds a
 `gmail.readonly` token, so Google refuses any change. Every spec here that applies an action must

@@ -205,7 +205,7 @@ Before saying a task is done: run `pnpm lint && pnpm typecheck && pnpm test`. If
 - Desktop app (Tauri or Electron) wrapping the same server and dashboard: double-click installer, tray icon, runs on startup, native notifications ("3 emails need you, 41 cleaned").
 - Ollama setup guided from inside the app, so non-technical users never open a terminal.
 
-Current phase: **v0.1, 3. Act safely** - specs 001 to 011 are done. The Foundations gate also wants
+Current phase: **v0.1, 3. Act safely** - specs 001 to 012 are done. The Foundations gate also wants
 one run against a real mailbox, which needs a Google OAuth client.
 
 The policy engine lives in `packages/core/src/policy`. It is the only place that decides what
@@ -215,6 +215,13 @@ remove actions, never add one. The confidence threshold is one of its settings, 
 pipeline passes `settings.confidenceThreshold` rather than a number of its own. The under-1% target
 is read strictly: a run at exactly 1% fails `pnpm eval --gate` and does not report as within the
 target.
+
+Applying a plan is `packages/core/src/execute`, and `cleamail run --apply` is the only path that
+changes a mailbox. Three properties it holds: the decision and its actions are written down before
+the provider is called, so a failed write cannot leave a change with no record; an action that would
+change nothing is never sent; and a read-only connection is refused by asking
+`MailProvider.capabilities()` first, rather than letting Google reject the call. `cleamail undo`
+reverses from the stored before-state and is safe to run twice.
 
 `pnpm eval` measures the pipeline against 300 synthetic emails. Two things it has already shown,
 worth knowing before touching the prompt or the model:

@@ -10,8 +10,8 @@ Commands
   run                  Fetch recent mail and report what cleamail thinks of it
   status               Show the account, the database and the last sync
   logout               Remove the stored credential from the OS keychain
+  undo                 Reverse the actions of the last run
   start                Run the background service          (phase 3)
-  undo                 Reverse the last applied actions    (phase 3)
   eval                 Measure accuracy on the eval set    (phase 2)
 
 Options for init
@@ -20,9 +20,15 @@ Options for init
 Options for run
   --since <window>     7d, 24h or an ISO date. Default: 7d
   --max <n>            Messages per page, 1 to 500. Default: 100
-  --dry-run            Change nothing in the mailbox. Always on in this phase
+  --dry-run            Change nothing in the mailbox. The default
+  --apply              Carry out the plan, recording every action so undo can reverse it
   --no-classify        Fetch only, without waiting on the model
   --redact             Print decisions without subjects, senders or reasons
+
+Options for undo
+  --last               Reverse the last run that applied anything. The default
+  --run <id>           Reverse one run by id, as printed after it ran
+  --email <id>         Reverse one message within that run
 
 Environment
   CLEAMAIL_MODEL       Ollama model for classification. Default: qwen2.5:7b

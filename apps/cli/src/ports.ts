@@ -19,15 +19,18 @@ export type {
   TokenStore,
 } from "@cleamail/core";
 
-export type { Action, Decision } from "@cleamail/core";
+export type { Action, ApplySummary, Decision, StoredDecision, UndoSummary } from "@cleamail/core";
 
 /** The fixed category order the report prints in, and the engine that decides what happens. */
 export {
   CATEGORIES,
   DEFAULT_POLICY_SETTINGS,
+  applyDecisions,
   decide,
+  emailId,
   explainDecision,
   removesFromInbox,
+  undoRun,
 } from "@cleamail/core";
 
 export type { Store } from "@cleamail/store";

@@ -7,9 +7,10 @@ import { logoutCommand } from "./commands/logout.js";
 import { notYetCommand } from "./commands/not-yet.js";
 import { runCommand } from "./commands/run.js";
 import { statusCommand } from "./commands/status.js";
+import { undoCommand } from "./commands/undo.js";
 import { VERSION } from "./version.js";
 
-const NOT_YET = ["start", "undo", "eval"];
+const NOT_YET = ["start", "eval"];
 
 const MAX_PAGE_SIZE = 500;
 
@@ -50,6 +51,9 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     case "run":
       return runWithFlags(deps, rest);
 
+    case "undo":
+      return undoWithFlags(deps, rest);
+
     default:
       deps.err(`Unknown command "${command}". Run \`cleamail --help\`.`);
 
@@ -58,7 +62,14 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
 }
 
 function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
-  let values: { since?: string; max?: string; "no-classify"?: boolean; redact?: boolean };
+  let values: {
+    since?: string;
+    max?: string;
+    "no-classify"?: boolean;
+    redact?: boolean;
+    "dry-run"?: boolean;
+    apply?: boolean;
+  };
 
   try {
     ({ values } = parseArgs({
@@ -66,10 +77,11 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
       options: {
         since: { type: "string" },
         max: { type: "string" },
-        // Accepted and ignored: nothing is applied to the mailbox yet, so every run is a dry run.
-        // The flag exists now so the documented command keeps working once SPEC-011 makes it mean
-        // something.
+        // Changing the mailbox is opt-in, per run. `--dry-run` is the default, accepted so the
+        // documented command reads the way it behaves, and it wins over `--apply` if both are
+        // given: the safer reading of a contradictory command line.
         "dry-run": { type: "boolean" },
+        apply: { type: "boolean" },
         // For fetching without waiting on a model.
         "no-classify": { type: "boolean" },
         // Print decisions without the mail they came from.
@@ -95,6 +107,39 @@ function runWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
     max,
     classify: values["no-classify"] !== true,
     redact: values.redact === true,
+    apply: values.apply === true && values["dry-run"] !== true,
+  });
+}
+
+/** `undo` with no flags means the last applying run, which is what `--last` says out loud. */
+function undoWithFlags(deps: CliDeps, argv: readonly string[]): Promise<number> {
+  let values: { last?: boolean; run?: string; email?: string };
+
+  try {
+    ({ values } = parseArgs({
+      args: [...argv],
+      options: {
+        last: { type: "boolean" },
+        run: { type: "string" },
+        email: { type: "string" },
+      },
+      allowPositionals: false,
+    }));
+  } catch (cause) {
+    deps.err(cause instanceof Error ? cause.message : "Could not read the options.");
+
+    return Promise.resolve(EXIT.usage);
+  }
+
+  if (values.last === true && values.run !== undefined) {
+    deps.err("Use either --last or --run <id>, not both.");
+
+    return Promise.resolve(EXIT.usage);
+  }
+
+  return undoCommand(deps, {
+    ...(values.run === undefined ? {} : { run: values.run }),
+    ...(values.email === undefined ? {} : { email: values.email }),
   });
 }
 

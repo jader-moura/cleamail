@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline/promises";
-import { accountId as toAccountId, systemClock } from "@cleamail/core";
+import { accountId as toAccountId, ok, systemClock } from "@cleamail/core";
 import {
   exchangeAuthorizationCode,
   GmailProvider,
@@ -80,7 +80,16 @@ async function main(): Promise<number> {
             tokens,
           }),
         ),
-        { logger },
+        {
+          logger,
+          // Read from the keychain when it is asked for, so what cleamail believes it may do is
+          // always what Google actually granted this mailbox.
+          scopes: async () => {
+            const token = await tokens.get(toAccountId(accountId));
+
+            return token.ok ? ok(token.value?.scopes) : token;
+          },
+        },
       ),
 
     makeProviderForToken: (accessToken) =>

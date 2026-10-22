@@ -4,7 +4,6 @@ import { EXIT } from "../exit.js";
 /** Commands the roadmap has not reached yet. They say so plainly instead of doing something odd. */
 const PHASES: Record<string, string> = {
   start: "the background service lands in phase 3 (SPEC-015)",
-  undo: "undo lands in phase 3 (SPEC-012)",
   eval: "the eval runner lands in phase 2 (SPEC-010)",
 };
 

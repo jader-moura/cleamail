@@ -30,7 +30,8 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 009  | Dry-run report in the CLI     | done   |
 | 010  | Evals and eval set v1         | done   |
 | 011  | Policy engine                 | done   |
-| 012  | Actions, audit log, undo      | next   |
+| 012  | Actions, audit log, undo      | done   |
+| 013  | Local server on 127.0.0.1     | next   |
 
 ## What a dry run looks like
 
@@ -65,6 +66,32 @@ Nothing in your mailbox was changed.
 
 Every email is accounted for, every decision carries its reason, and the summary shows how much of
 the result came from deterministic rules rather than the model.
+
+## Applying it, and taking it back
+
+`cleamail run --apply` carries out that same plan. Nothing else changes: the report is printed
+first, so the last thing read before a mailbox is touched is the list of what is about to happen.
+
+```
+Applying this now. Reverse all of it with: cleamail undo --last
+
+applied
+
+  changed    3 email(s), 6 action(s)
+  skipped    1 action(s) that would change nothing
+```
+
+Every action is written down with the state it found, which is what `cleamail undo` reverses from:
+it never has to work out what a message looked like before. Three rules make that record worth
+trusting:
+
+- The plan is written to the database **before** the mailbox is touched, so a failed write cannot
+  leave a changed mailbox with nothing to undo from.
+- An action that would change nothing is never sent, and is recorded as skipped rather than applied.
+- A mailbox connected with `init --read-only` is refused before anything is attempted, with the one
+  sentence that fixes it.
+
+Undo is safe to run twice: a run that has already been undone says so and changes nothing.
 
 ## How the privacy promise is enforced
 

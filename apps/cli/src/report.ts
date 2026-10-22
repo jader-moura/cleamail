@@ -48,6 +48,13 @@ export type ReportInput = {
    * line a row up against their own inbox and say which ones are wrong.
    */
   readonly redact?: boolean;
+  /**
+   * The plan is about to be applied, so the report must not promise otherwise.
+   *
+   * The closing line is the last thing a user reads, and "nothing was changed" under a run that is
+   * changing things would be the worst sentence in the product.
+   */
+  readonly applying?: boolean;
 };
 
 /**
@@ -183,7 +190,9 @@ export function formatReport(input: ReportInput): readonly string[] {
     return ["Nothing to classify in that window."];
   }
 
-  if (input.redact === true) return redactedReport(pairings, input.model);
+  if (input.redact === true) {
+    return redactedReport(pairings, input.model, input.applying === true);
+  }
 
   const review = pairings.filter((pairing) => pairing.outcome.reviewReason !== undefined);
   const settled = pairings.filter((pairing) => pairing.outcome.reviewReason === undefined);
@@ -208,7 +217,7 @@ export function formatReport(input: ReportInput): readonly string[] {
     ...section("summary", summary(pairings, input.model)),
   );
 
-  lines.push("Nothing in your mailbox was changed.");
+  lines.push(closing(input.applying === true));
 
   return lines;
 }
@@ -220,7 +229,11 @@ export function formatReport(input: ReportInput): readonly string[] {
  * a rule or the model decided it. The date stays because it is what lets the mailbox owner find the
  * email again; no subject, no address and no model-written reason appear at all.
  */
-function redactedReport(pairings: readonly Pairing[], model: string): readonly string[] {
+function redactedReport(
+  pairings: readonly Pairing[],
+  model: string,
+  applying: boolean,
+): readonly string[] {
   const rows = pairings.map((pairing, index) => {
     const { classification, reviewReason } = pairing.outcome;
     const when = pairing.email.receivedAt.toISOString().slice(0, 16).replace("T", " ");
@@ -239,8 +252,15 @@ function redactedReport(pairings: readonly Pairing[], model: string): readonly s
     "",
     ...summary(pairings, model),
     "",
-    "Nothing in your mailbox was changed.",
+    closing(applying),
   ];
+}
+
+/** The last line of every report, and the one a user is most likely to quote back. */
+function closing(applying: boolean): string {
+  return applying
+    ? "Applying this now. Reverse all of it with: cleamail undo --last"
+    : "Nothing in your mailbox was changed.";
 }
 
 function section(heading: string, body: readonly string[]): readonly string[] {
