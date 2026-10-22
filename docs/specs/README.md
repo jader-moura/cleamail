@@ -39,14 +39,14 @@ disagree about what would have happened to an email.
 
 ## v0.1 - 3. Act safely
 
-| ID  | Spec                                                  | Status |
-| --- | ----------------------------------------------------- | ------ |
-| 011 | [Policy engine](011-policy-engine.md)                 | done   |
-| 012 | [Actions, audit log, undo](012-actions-audit-undo.md) | done   |
-| 013 | Fastify server on 127.0.0.1 with local API            | next   |
-| 014 | React dashboard: first-run dry-run preview            | todo   |
-| 015 | Background scheduler                                  | todo   |
-| 016 | Opt-in trash rule and settings                        | todo   |
+| ID  | Spec                                                              | Status |
+| --- | ----------------------------------------------------------------- | ------ |
+| 011 | [Policy engine](011-policy-engine.md)                             | done   |
+| 012 | [Actions, audit log, undo](012-actions-audit-undo.md)             | done   |
+| 013 | [Fastify server on 127.0.0.1 with local API](013-local-server.md) | done   |
+| 014 | [React dashboard: first-run dry-run preview](014-dashboard.md)    | done   |
+| 015 | Background scheduler                                              | next   |
+| 016 | Opt-in trash rule and settings                                    | todo   |
 
 Gate: two weeks on a real inbox, nothing important lost.
 
@@ -60,9 +60,24 @@ CLI writes to, and it plans nothing of its own. It binds `127.0.0.1`, checks the
 every request, and sends no CORS header.
 
 Carried into SPEC-014 from SPEC-013: the dashboard is served from the same origin as the API, with
-every asset bundled locally, so the `Host` check and the absence of CORS keep holding. The API
-carries decisions and never email content, so a view that wants to show a subject reads it from the
-store rather than from a new field on the API.
+every asset bundled locally, so the `Host` check and the absence of CORS keep holding.
+
+Settled by SPEC-014: the dashboard is served from the same origin by `@fastify/static`, every asset
+is in the bundle, and a test builds the app and scans the output for an external URL. Approving a
+preview applies the decisions that were already recorded, through the executor, so the browser never
+plans anything. Reading needs an account id and acting needs a provider, which are separate
+dependencies now.
+
+Carried into SPEC-015 from SPEC-014: the dashboard cannot start a run, because fetching and
+classifying need the model and the provider. The scheduler is what gives it one, and the button it
+enables must go through the same executor rather than a second path of its own.
+
+Corrected in SPEC-014: SPEC-013 said a view that wants to show a subject should read it from the
+store rather than from the API. That is impossible, because the dashboard runs in a browser and
+cannot open SQLite. The rule it was reaching for is about where content goes, not which process
+reads it: loopback HTTP to the user's own browser never leaves the machine, so the API may serve
+subjects and senders to the dashboard. What must never carry content is a log line, the audit log,
+or anything addressed outside this machine, and nothing is.
 
 Carried into this phase from SPEC-008: a mailbox connected with `cleamail init --read-only` holds a
 `gmail.readonly` token, so Google refuses any change. Every spec here that applies an action must

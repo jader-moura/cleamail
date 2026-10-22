@@ -205,7 +205,7 @@ Before saying a task is done: run `pnpm lint && pnpm typecheck && pnpm test`. If
 - Desktop app (Tauri or Electron) wrapping the same server and dashboard: double-click installer, tray icon, runs on startup, native notifications ("3 emails need you, 41 cleaned").
 - Ollama setup guided from inside the app, so non-technical users never open a terminal.
 
-Current phase: **v0.1, 3. Act safely** - specs 001 to 013 are done. The Foundations gate also wants
+Current phase: **v0.1, 3. Act safely** - specs 001 to 014 are done. The Foundations gate also wants
 one run against a real mailbox, which needs a Google OAuth client.
 
 The policy engine lives in `packages/core/src/policy`. It is the only place that decides what
@@ -226,8 +226,15 @@ reverses from the stored before-state and is safe to run twice.
 `apps/server` is the local API: Fastify on `127.0.0.1`, no CORS header anywhere, and a `Host` check
 on every request, because loopback binding alone does not stop a page the user is visiting from
 resolving its own hostname to 127.0.0.1. It reads what the CLI wrote and calls the executor's undo;
-it plans nothing. Responses are built by mappers in `apps/server/src/api.ts` and carry no subject,
-sender or body.
+it plans nothing. Responses are built by mappers in `apps/server/src/api.ts`; a decision shape
+carries no subject or sender, and `/api/emails` is the one route that serves mail. Reading goes
+through `deps.account()` and only the two routes that change a mailbox use `deps.connect()`, so a
+missing OAuth client does not break the lists.
+
+`apps/web` is the dashboard, served from the same origin by the server. It renders what the API says
+and asks for apply or undo; nothing in the browser decides anything. Approving a preview applies the
+decisions already recorded for that run. Every asset is bundled: a test builds the app and fails on
+any external URL, so a CDN script or a webfont cannot slip in.
 
 `pnpm eval` measures the pipeline against 300 synthetic emails. Two things it has already shown,
 worth knowing before touching the prompt or the model:

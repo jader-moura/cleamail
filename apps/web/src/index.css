@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/*
+ * The font stack is whatever the machine already has.
+ *
+ * No webfont, from a CDN or bundled: a dashboard about privacy that downloads a typeface is making
+ * a request it did not need to make, and a bundled one would be weight for nothing.
+ */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html {
+  font-family: var(--font-sans);
+}

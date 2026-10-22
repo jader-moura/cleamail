@@ -32,7 +32,8 @@ tracked as small specs in [docs/specs](docs/specs/README.md).
 | 011  | Policy engine                 | done   |
 | 012  | Actions, audit log, undo      | done   |
 | 013  | Local server on 127.0.0.1     | done   |
-| 014  | React dashboard               | next   |
+| 014  | React dashboard               | done   |
+| 015  | Background scheduler          | next   |
 
 ## What a dry run looks like
 
