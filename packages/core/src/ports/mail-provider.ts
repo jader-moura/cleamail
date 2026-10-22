@@ -24,6 +24,19 @@ export type MailAccount = {
 };
 
 /**
+ * What the connection is actually allowed to do.
+ *
+ * Asked rather than assumed: a mailbox connected with `init --read-only` holds a read-only token,
+ * and the executor has to be able to say so in plain words before it tries. The scopes themselves
+ * stay in the adapter, so nothing provider-specific reaches the domain.
+ */
+export type MailboxCapabilities = {
+  readonly canModify: boolean;
+  /** One sentence naming the fix, when `canModify` is false. */
+  readonly reason?: string;
+};
+
+/**
  * The only way cleamail touches a mailbox: read messages, apply a planned action, make sure the
  * labels it owns exist. Nothing here can send mail or delete permanently, because those operations
  * do not exist in this port.
@@ -33,6 +46,9 @@ export interface MailProvider {
 
   /** Identity of the connected mailbox, used to scope stored decisions. */
   account(): Promise<Result<MailAccount>>;
+
+  /** Whether this connection may change the mailbox. Checked before anything is applied. */
+  capabilities(): Promise<Result<MailboxCapabilities>>;
 
   listEmails(options: ListEmailsOptions): Promise<Result<EmailPage>>;
 

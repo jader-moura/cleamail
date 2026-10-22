@@ -1,8 +1,9 @@
-import { LABEL_CLEANED, type Email, type EmailId } from "@cleamail/core";
+import { LABEL_CLEANED, failure, ok, type Email, type EmailId } from "@cleamail/core";
 import { describe, expect, it } from "vitest";
 import { describeMailProviderContract } from "../testing/mail-provider-contract.js";
 import { StubGmailApi } from "../testing/stub-gmail-api.js";
 import { GmailProvider } from "./provider.js";
+import { GMAIL_READONLY_SCOPES, GMAIL_SCOPES } from "./scopes.js";
 import { buildFetchQuery } from "./query.js";
 import { codeForStatus, isRetryable } from "./errors.js";
 import type { GmailApi, GmailLabel, GmailListResponse, GmailMessage } from "./types.js";
@@ -11,9 +12,50 @@ describeMailProviderContract("GmailProvider", (emails) => {
   const api = new StubGmailApi("user@example.com", emails);
 
   return {
-    provider: new GmailProvider(api),
+    provider: new GmailProvider(api, { scopes: () => Promise.resolve(ok([...GMAIL_SCOPES])) }),
     isTrashed: (id) => Promise.resolve(api.isTrashed(id)),
   };
+});
+
+describe("GmailProvider capabilities", () => {
+  const api = new StubGmailApi("user@example.com", []);
+
+  it("reads the access level off the token's scopes", async () => {
+    const provider = new GmailProvider(api, {
+      scopes: () => Promise.resolve(ok([...GMAIL_READONLY_SCOPES])),
+    });
+
+    const capabilities = await provider.capabilities();
+
+    expect(capabilities.ok && capabilities.value.canModify).toBe(false);
+    expect(capabilities.ok && capabilities.value.reason).toContain("read-only");
+  });
+
+  it("says no when nothing can tell it what the token carries", async () => {
+    const capabilities = await new GmailProvider(api).capabilities();
+
+    // The safe direction to be wrong in: refuse rather than attempt and fail at the API.
+    expect(capabilities.ok && capabilities.value.canModify).toBe(false);
+  });
+
+  it("says no when there is no stored token at all", async () => {
+    const provider = new GmailProvider(api, { scopes: () => Promise.resolve(ok(undefined)) });
+
+    const capabilities = await provider.capabilities();
+
+    expect(capabilities.ok && capabilities.value.canModify).toBe(false);
+  });
+
+  it("passes on an error from reading the token rather than guessing", async () => {
+    const provider = new GmailProvider(api, {
+      scopes: () => Promise.resolve(failure("store_failure", "The keychain is locked.")),
+    });
+
+    const capabilities = await provider.capabilities();
+
+    expect(capabilities.ok).toBe(false);
+    expect(!capabilities.ok && capabilities.error.message).toContain("keychain");
+  });
 });
 
 function anEmail(overrides: Partial<Email> = {}): Email {

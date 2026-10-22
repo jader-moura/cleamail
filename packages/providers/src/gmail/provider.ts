@@ -10,11 +10,13 @@ import {
   type ListEmailsOptions,
   type Logger,
   type MailAccount,
+  type MailboxCapabilities,
   type MailProvider,
   type MailProviderKind,
   type Result,
 } from "@cleamail/core";
 import { gmailMessageToEmail } from "./mapper.js";
+import { canModify } from "./scopes.js";
 import { buildFetchQuery } from "./query.js";
 import { toDomainError } from "./errors.js";
 import type { GmailApi, LabelChanges } from "./types.js";
@@ -28,7 +30,20 @@ const FETCH_CONCURRENCY = 5;
 
 export type GmailProviderOptions = {
   readonly logger?: Logger;
+  /**
+   * What the stored token actually carries, read when it is needed rather than at construction.
+   *
+   * Resolved late on purpose: a user can re-run `init` to widen their access while a long run is
+   * going, and the only thing that decides what cleamail may do is what Google granted.
+   */
+  readonly scopes?: () => Promise<Result<readonly string[] | undefined>>;
 };
+
+const READ_ONLY_REASON =
+  "This mailbox is connected read-only. Run `cleamail init` again without --read-only to let cleamail change labels.";
+
+const UNKNOWN_REASON =
+  "cleamail could not read what this connection is allowed to do, so it changed nothing. Run `cleamail status` to check.";
 
 /** Fetches a batch without hammering the API or serialising it one message at a time. */
 async function mapWithConcurrency<T, U>(
@@ -69,6 +84,7 @@ export class GmailProvider implements MailProvider {
   readonly kind: MailProviderKind = "gmail";
 
   private readonly logger: Logger;
+  private readonly scopes: GmailProviderOptions["scopes"];
   private labelsByName: Map<string, string> | undefined;
   private labelsById = new Map<string, string>();
   private cachedAccount: MailAccount | undefined;
@@ -78,6 +94,7 @@ export class GmailProvider implements MailProvider {
     options: GmailProviderOptions = {},
   ) {
     this.logger = options.logger ?? silentLogger;
+    this.scopes = options.scopes;
   }
 
   async account(): Promise<Result<MailAccount>> {
@@ -97,6 +114,27 @@ export class GmailProvider implements MailProvider {
     } catch (cause) {
       return err(toDomainError(cause, "Could not read the Gmail profile."));
     }
+  }
+
+  /**
+   * Whether this connection may change the mailbox, read off the token's scopes.
+   *
+   * Anything it cannot interpret counts as read-only, which is the safe direction to be wrong in:
+   * the executor refuses rather than attempting a change and recording a failure for something
+   * cleamail never had permission to do.
+   */
+  async capabilities(): Promise<Result<MailboxCapabilities>> {
+    if (this.scopes === undefined) return ok({ canModify: false, reason: UNKNOWN_REASON });
+
+    const scopes = await this.scopes();
+    if (!scopes.ok) return scopes;
+    if (scopes.value === undefined) return ok({ canModify: false, reason: UNKNOWN_REASON });
+
+    return ok(
+      canModify(scopes.value)
+        ? { canModify: true }
+        : { canModify: false, reason: READ_ONLY_REASON },
+    );
   }
 
   async listEmails(options: ListEmailsOptions): Promise<Result<EmailPage>> {

@@ -13,6 +13,8 @@ export {
 } from "./paths.js";
 export { emailToRow, rowsToEmails, rowToEmail } from "./mappers.js";
 export { SqliteAccountRepository } from "./repositories/account-repository.js";
+export { SqliteAuditLog } from "./repositories/audit-repository.js";
+export { SqliteDecisionStore } from "./repositories/decision-repository.js";
 export { SqliteEmailStore } from "./repositories/email-repository.js";
 export { SqliteSettingsRepository } from "./repositories/settings-repository.js";
 export { openInMemoryStore, openStore, type Store, type StoreOptions } from "./store.js";

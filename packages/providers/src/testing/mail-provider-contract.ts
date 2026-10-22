@@ -72,6 +72,18 @@ export function describeMailProviderContract(name: string, createSubject: Contra
       expect(account.value.address).toBe("user@example.com");
     });
 
+    it("says whether it may change the mailbox", async () => {
+      const { provider } = await createSubject([seeded]);
+
+      const capabilities = await provider.capabilities();
+
+      expect(capabilities.ok).toBe(true);
+      if (!capabilities.ok) return;
+      // The suite runs against a connection that may act, and a provider that cannot answer this
+      // question must say no: the executor refuses rather than trying and failing at the API.
+      expect(capabilities.value.canModify).toBe(true);
+    });
+
     it("lists only messages in the window", async () => {
       const { provider } = await createSubject([seeded, older]);
 

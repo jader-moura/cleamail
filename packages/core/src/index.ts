@@ -11,10 +11,13 @@ export * from "./domain/labels.js";
 
 export * from "./ports/classifier.js";
 export * from "./ports/clock.js";
+export * from "./ports/decision-store.js";
 export * from "./ports/email-store.js";
 export * from "./ports/logger.js";
 export * from "./ports/mail-provider.js";
 export * from "./ports/token-store.js";
+
+export * from "./execute/index.js";
 
 export * from "./pipeline/classify.js";
 

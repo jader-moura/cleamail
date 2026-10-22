@@ -58,14 +58,26 @@ export const decisions = sqliteTable(
       .notNull()
       .references(() => emails.id, { onDelete: "cascade" }),
     accountId: text("account_id").notNull(),
-    category: text("category").notNull(),
-    importance: real("importance").notNull(),
-    confidence: real("confidence").notNull(),
+    /** Groups the decisions one run produced, so undo can reverse a batch. */
+    runId: text("run_id").notNull().default(""),
+    /**
+     * Null when the model returned something invalid.
+     *
+     * A decision without a classification is still a decision, and these are exactly the rows a
+     * user needs to be able to find. A schema that could not hold them would make the audit log
+     * complete only about the cases that went well.
+     */
+    category: text("category"),
+    importance: real("importance"),
+    confidence: real("confidence"),
     /** The one sentence shown to the user next to the decision. */
-    reason: text("reason").notNull(),
-    source: text("source").notNull(),
+    reason: text("reason"),
+    source: text("source"),
     ruleId: text("rule_id"),
     model: text("model"),
+    /** Why a human should look at this, and cleamail's own words about what went wrong. */
+    reviewReason: text("review_reason"),
+    reviewDetail: text("review_detail"),
     actionsJson: text("actions_json").notNull().default("[]"),
     policyVersion: text("policy_version").notNull(),
     decidedAt: integer("decided_at", { mode: "timestamp_ms" }).notNull(),
@@ -76,6 +88,7 @@ export const decisions = sqliteTable(
   (table) => [
     index("decisions_email_idx").on(table.emailId),
     index("decisions_decided_idx").on(table.decidedAt),
+    index("decisions_run_idx").on(table.runId),
   ],
 );
 
@@ -90,6 +103,8 @@ export const actions = sqliteTable(
     type: text("type").notNull(),
     /** The full action, including the before-state undo needs. */
     payloadJson: text("payload_json").notNull(),
+    /** `applied`, `skipped`, `failed` or `reversed`: a no-op is a record, not a change. */
+    outcome: text("outcome").notNull().default("applied"),
     appliedAt: integer("applied_at", { mode: "timestamp_ms" }).notNull(),
     reversedAt: integer("reversed_at", { mode: "timestamp_ms" }),
     error: text("error"),
@@ -154,6 +169,10 @@ export const settings = sqliteTable("settings", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+export type DecisionRow = typeof decisions.$inferSelect;
+export type NewDecisionRow = typeof decisions.$inferInsert;
+export type ActionRow = typeof actions.$inferSelect;
+export type AuditRow = typeof auditLog.$inferSelect;
 export type EmailRow = typeof emails.$inferSelect;
 export type NewEmailRow = typeof emails.$inferInsert;
 export type AccountRow = typeof accounts.$inferSelect;

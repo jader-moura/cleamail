@@ -1,14 +1,17 @@
 import {
   accountId as toAccountId,
+  err,
   failure,
   LABEL_CLEANED,
   ok,
   type Action,
+  type DomainError,
   type Email,
   type EmailId,
   type EmailPage,
   type ListEmailsOptions,
   type MailAccount,
+  type MailboxCapabilities,
   type MailProvider,
   type MailProviderKind,
   type Result,
@@ -17,6 +20,8 @@ import {
 export type FakeProviderOptions = {
   readonly address?: string;
   readonly emails?: readonly Email[];
+  /** False stands in for a mailbox connected with `init --read-only`. */
+  readonly canModify?: boolean;
 };
 
 /**
@@ -32,9 +37,12 @@ export class FakeMailProvider implements MailProvider {
   private readonly trashed = new Set<string>();
   private readonly labels = new Set<string>([LABEL_CLEANED]);
   private readonly address: string;
+  private readonly allowed: boolean;
+  private readonly failures = new Map<string, DomainError>();
 
   constructor(options: FakeProviderOptions = {}) {
     this.address = options.address ?? "user@example.com";
+    this.allowed = options.canModify ?? true;
 
     for (const email of options.emails ?? []) {
       this.emails.set(email.id, email);
@@ -44,6 +52,19 @@ export class FakeMailProvider implements MailProvider {
   account(): Promise<Result<MailAccount>> {
     return Promise.resolve(
       ok({ id: toAccountId(this.address), kind: this.kind, address: this.address }),
+    );
+  }
+
+  capabilities(): Promise<Result<MailboxCapabilities>> {
+    return Promise.resolve(
+      ok(
+        this.allowed
+          ? { canModify: true }
+          : {
+              canModify: false,
+              reason: "This mailbox is connected read-only, so nothing can be changed.",
+            },
+      ),
     );
   }
 
@@ -80,6 +101,12 @@ export class FakeMailProvider implements MailProvider {
   }
 
   /** Test helpers. */
+
+  /** Makes every apply and reverse for one message fail, the way a deleted message would. */
+  failOn(id: EmailId, error: DomainError): void {
+    this.failures.set(id, error);
+  }
+
   isTrashed(id: EmailId): boolean {
     return this.trashed.has(id);
   }
@@ -93,6 +120,9 @@ export class FakeMailProvider implements MailProvider {
     actions: readonly Action[],
     direction: "apply" | "reverse",
   ): Result<void> {
+    const scripted = this.failures.get(id);
+    if (scripted !== undefined) return err(scripted);
+
     const email = this.emails.get(id);
     if (email === undefined) return failure("not_found", `No message ${id}.`);
 
