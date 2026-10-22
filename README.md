@@ -119,7 +119,7 @@ request between your browser and Google. See [docs/gmail-setup.md](docs/gmail-se
 
 ```bash
 pnpm install
-pnpm dev          # server + web dashboard in watch mode (from phase 3)
+pnpm dev          # dashboard on :5173 with hot reload, local API on :4571
 pnpm test         # vitest, all packages
 pnpm lint
 pnpm typecheck
@@ -138,6 +138,12 @@ pnpm --filter @cleamail/cli dev -- status
 
 `CLEAMAIL_DB` points the database somewhere other than the per-user data directory, which is handy
 while developing.
+
+`pnpm dev` starts the Vite dev server for the dashboard, which proxies `/api` to the local service
+on port 4571, so the browser stays on one origin exactly as it does in production. The dashboard
+hot-reloads; the API is built when `dev` starts, so a change to `apps/server` needs it restarted.
+`pnpm build && node apps/server/dist/main.js` runs the real thing, dashboard and all, on
+`http://127.0.0.1:4571`.
 
 ## Layout
 

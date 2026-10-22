@@ -76,6 +76,14 @@ staying in the document and the next test found two of everything. And the bundl
 in the node environment, because a real build runs esbuild and esbuild's `TextEncoder` invariant
 fails inside jsdom.
 
+Auditing the acceptance list afterwards caught three more, which is the point of writing one. Every
+panel except the preview rendered its empty state while the request was still in flight, so a
+loading mailbox said "nothing in the inbox needs you right now", and on failure said the same. They
+follow the query behind them now, through one `ListPanel`. Approving and undoing refreshed the lists
+but said nothing about what had happened, and threw away the per-email failures the executor
+reports, so both now print what changed and name anything that could not be done. And the dev script
+claimed a watch mode the server does not have; the docs say what actually happens instead.
+
 ## Acceptance
 
 - `GET /api/emails` returns subject, sender, date and state for the ids asked for, and nothing else.

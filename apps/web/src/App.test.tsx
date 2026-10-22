@@ -190,8 +190,131 @@ describe("the dashboard", () => {
 
     expect(await screen.findByText("cleamail was unsure")).toBeInTheDocument();
     expect(
-      screen.getByText(/Waiting for you because the model's answer could not be used/),
+      await screen.findByText(/Waiting for you because the model's answer could not be used/),
     ).toBeInTheDocument();
+  });
+
+  it("says what it changed after approving, including what it skipped", async () => {
+    fakeApi({
+      decisions: [aDecision({ dryRun: true, runId: "preview-1" })],
+      emails: [anEmail()],
+    });
+
+    renderApp(<App now={NOW} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Approve and apply/ }));
+
+    expect(await screen.findByText(/Applied 2 changes to 1 email/)).toBeInTheDocument();
+  });
+
+  it("shows a long preview a few rows at a time, with a way to see all of it", async () => {
+    const many = Array.from({ length: 8 }, (_unused, index) =>
+      aDecision({
+        id: index + 1,
+        dryRun: true,
+        runId: "preview-1",
+        emailId: `msg-${String(index + 1)}`,
+      }),
+    );
+
+    fakeApi({
+      decisions: many,
+      emails: many.map((decision, index) =>
+        anEmail({ id: decision.emailId, subject: `Offer number ${String(index + 1)}` }),
+      ),
+    });
+
+    renderApp(<App now={NOW} />);
+
+    expect(await screen.findByText("Offer number 1")).toBeInTheDocument();
+    expect(screen.queryByText("Offer number 8")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Show all 8" }));
+
+    expect(screen.getByText("Offer number 8")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+
+    expect(screen.queryByText("Offer number 8")).not.toBeInTheDocument();
+  });
+
+  it("says a run had already been put back rather than claiming to undo it again", async () => {
+    fakeApi({
+      decisions: [aDecision()],
+      emails: [anEmail()],
+      undo: { runId: "run-1", emailsRestored: 0, reversed: 0, alreadyReversed: 2, failures: [] },
+    });
+
+    renderApp(<App now={NOW} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Undo the last run/ }));
+
+    expect(await screen.findByText(/already been put back/)).toBeInTheDocument();
+  });
+
+  it("names an email it could not change, because the run carries on past one", async () => {
+    fakeApi({
+      decisions: [aDecision({ dryRun: true, runId: "preview-1" })],
+      emails: [anEmail()],
+      apply: {
+        runId: "apply-1",
+        emailsChanged: 1,
+        applied: 2,
+        skipped: 1,
+        failures: [{ emailId: "msg-9", error: "No message msg-9." }],
+      },
+    });
+
+    renderApp(<App now={NOW} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Approve and apply/ }));
+
+    expect(await screen.findByText(/1 email could not be changed/)).toBeInTheDocument();
+    expect(screen.getByText("msg-9")).toBeInTheDocument();
+    expect(screen.getByText(/1 change were already true/)).toBeInTheDocument();
+  });
+
+  it("says what it put back after an undo", async () => {
+    fakeApi({ decisions: [aDecision()], emails: [anEmail()] });
+
+    renderApp(<App now={NOW} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Undo the last run/ }));
+
+    expect(await screen.findByText(/Put 1 email back/)).toBeInTheDocument();
+  });
+
+  it("does not claim a list is empty while it is still loading", async () => {
+    // Every panel follows the one query behind it. The first version of this page rendered
+    // "nothing in the inbox needs you" before the request had answered, which is a lie about
+    // someone's mailbox in the calmest possible voice.
+    fakeApi({
+      decisions: [
+        aDecision({
+          category: "important",
+          actions: [
+            { id: 1, type: "star", outcome: "applied", at: NOW.toISOString(), reversible: true },
+          ],
+        }),
+      ],
+      emails: [anEmail()],
+    });
+
+    renderApp(<App now={NOW} />);
+
+    expect(screen.getAllByRole("status").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Nothing in the inbox needs you/)).not.toBeInTheDocument();
+    expect(await screen.findByText("Half price everything")).toBeInTheDocument();
+  });
+
+  it("says every list failed, not just the first one", async () => {
+    fakeApi({ failures: { "/api/decisions": 500, "/api/audit": 500 } });
+
+    renderApp(<App now={NOW} />);
+
+    expect(await screen.findByText(/Could not load what needs you/)).toBeInTheDocument();
+    expect(screen.getByText(/Could not load what was cleaned/)).toBeInTheDocument();
+    expect(screen.getByText(/Could not load the log/)).toBeInTheDocument();
   });
 
   it("says what went wrong rather than showing an empty page", async () => {
@@ -199,7 +322,8 @@ describe("the dashboard", () => {
     renderApp(<App now={NOW} />);
 
     expect(await screen.findByText(/Could not load the decisions/)).toBeInTheDocument();
-    expect(screen.getByText("The database is locked.")).toBeInTheDocument();
+    // Said once per list, because each panel is answering for itself.
+    expect(screen.getAllByText("The database is locked.").length).toBeGreaterThan(1);
   });
 
   it("shows the log of what it did", async () => {

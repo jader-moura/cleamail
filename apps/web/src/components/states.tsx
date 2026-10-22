@@ -53,3 +53,40 @@ export function Failed({ what, error }: { what: string; error: unknown }) {
     </div>
   );
 }
+
+/**
+ * A panel whose body follows the query behind it.
+ *
+ * Written once because the alternative is what this page had first: panels that rendered "nothing
+ * here" while the request was still in flight, which is a lie about someone's mailbox told in the
+ * calmest possible voice.
+ */
+export function ListPanel({
+  title,
+  action,
+  state,
+  what,
+  empty,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  state: { isPending: boolean; isError: boolean; error: unknown; isEmpty: boolean };
+  what: string;
+  empty: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Panel title={title} {...(action === undefined ? {} : { action })}>
+      {state.isPending ? (
+        <Loading what={what} />
+      ) : state.isError ? (
+        <Failed what={what} error={state.error} />
+      ) : state.isEmpty ? (
+        <Empty>{empty}</Empty>
+      ) : (
+        children
+      )}
+    </Panel>
+  );
+}

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderResult } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { vi } from "vitest";
-import type { ApiDecision, ApiEmail, ApiStatus } from "../api.js";
+import type { ApiApplyResult, ApiDecision, ApiEmail, ApiStatus, ApiUndoResult } from "../api.js";
 
 export const NOW = new Date("2026-10-22T12:00:00.000Z");
 
@@ -100,6 +100,8 @@ export type Routes = {
   readonly decisions?: readonly ApiDecision[];
   readonly emails?: readonly ApiEmail[];
   readonly audit?: readonly { id: number; at: string; kind: string; summary: string }[];
+  readonly apply?: ApiApplyResult;
+  readonly undo?: ApiUndoResult;
   /** Paths that should answer with an error, as path prefix to status code. */
   readonly failures?: Readonly<Record<string, number>>;
 };
@@ -149,18 +151,28 @@ export function fakeApi(routes: Routes = {}): { calls: { url: string; body?: unk
         return Promise.resolve(answer({ audit: routes.audit ?? [] }));
       if (url.startsWith("/api/apply")) {
         return Promise.resolve(
-          answer({ runId: "apply-1", emailsChanged: 1, applied: 2, skipped: 0, failures: [] }),
+          answer(
+            routes.apply ?? {
+              runId: "apply-1",
+              emailsChanged: 1,
+              applied: 2,
+              skipped: 0,
+              failures: [],
+            },
+          ),
         );
       }
       if (url.startsWith("/api/undo")) {
         return Promise.resolve(
-          answer({
-            runId: "run-1",
-            emailsRestored: 1,
-            reversed: 2,
-            alreadyReversed: 0,
-            failures: [],
-          }),
+          answer(
+            routes.undo ?? {
+              runId: "run-1",
+              emailsRestored: 1,
+              reversed: 2,
+              alreadyReversed: 0,
+              failures: [],
+            },
+          ),
         );
       }
 

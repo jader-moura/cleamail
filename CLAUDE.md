@@ -138,7 +138,7 @@ Policy defaults:
 
 ```bash
 pnpm install
-pnpm dev            # server + web in watch mode
+pnpm dev            # dashboard on :5173 with hot reload, API on :4571 (rebuild to pick up server changes)
 pnpm build
 pnpm test           # vitest, all packages
 pnpm test:e2e       # Playwright against the web dashboard
